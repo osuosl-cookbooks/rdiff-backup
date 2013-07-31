@@ -3,9 +3,5 @@ package "rdiff-backup" do
   action :install
 end
 
-# create the backup user and copy over its ssh pubkey
+# create the client backup user and copy over its ssh pubkey from the node['users'] attribute and its corresponding databag
 include_recipe "user::data_bag"
-node['users'] = ['rdiff-backup-client']
-
-# give the backup user sudo access so it can read all the files
-node['authorization']['sudo']['users'] = ["rdiff-backup-client"]

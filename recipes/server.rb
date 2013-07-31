@@ -3,9 +3,8 @@ package "rdiff-backup" do
   action :install
 end
 
-# create the backup user (its private key must be copied over manually)
+# create the server backup user from the node['users'] attribute and its corresponding databag (its private key must be copied over manually)
 include_recipe "user::data_bag"
-node['users'] = ['rdiff-backup-server']
 
 # find nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
