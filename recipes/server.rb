@@ -5,7 +5,7 @@ end
 
 # create the backup user (its private key must be copied over manually)
 include_recipe "user::data_bag"
-node['rdiff-backup']['users'] = ['rdiff-backup-server']
+node['users'] = ['rdiff-backup-server']
 
 # find nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
@@ -36,7 +36,7 @@ nodes.each do |n|
     hour "#{hour}"
     user "rdiff-backup-server"
     mailto "root@osuosl.org"
-    command "rdiff-backup #{n.fqdn}:#{n['rdiff-backup']['backup-dirs']} node['rdiff-backup']['backup-target']"
+    command "rdiff-backup #{n.fqdn}:#{n['rdiff-backup']['backup-dirs']} #{node['rdiff-backup']['backup-target']}"
   end
 
   finishedbackups += 1
