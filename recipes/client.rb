@@ -1,3 +1,7 @@
+users = node['users']
+users << 'rdiff-backup-client'
+node.default['users'] = users
+
 # install rdiff-backup
 package "rdiff-backup" do
   action :install
