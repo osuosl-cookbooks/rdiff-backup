@@ -1,3 +1,7 @@
+rdiff_user = ['rdiff-backup-server']
+rdiff_user << node['users']
+node.default['users'] = rdiff_user
+
 # install rdiff-backup
 package "rdiff-backup" do
   action :install
