@@ -1,6 +1,4 @@
-users = node['users']
-users << 'rdiff-backup-client'
-node.default['users'] = users
+node.default['users'] << node['users'] << 'rdiff-backup-client'
 
 # install rdiff-backup
 package "rdiff-backup" do
