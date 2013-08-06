@@ -1,7 +1,7 @@
 # default attributes
-default['users'] = ['rdiff-backup-client']
-default['authorization']['sudo']['users'] = ["rdiff-backup-client"]
-default['rdiff-backup']['backup-dirs'] = []
+node.default['users'] = ['rdiff-backup-client']
+node.default['authorization']['sudo']['users'] = ["rdiff-backup-client"]
+node.default['rdiff-backup']['backup-dirs'] = []
 
 # install rdiff-backup
 package "rdiff-backup" do

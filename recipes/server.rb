@@ -1,7 +1,7 @@
 # default attributes
-default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
-default['rdiff-backup']['endhour'] = 23 #(7am PST) 
-default['rdiff-backup']['backup-target'] = "/data/rdiff-backup"
+node.default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
+node.default['rdiff-backup']['endhour'] = 23 #(7am PST) 
+node.default['rdiff-backup']['backup-target'] = "/data/rdiff-backup"
 
 # install rdiff-backup
 package "rdiff-backup" do
