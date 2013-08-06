@@ -28,33 +28,34 @@ end
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
 nodes = Array.new
 
-nodes = search(:node, "hostname:[* TO *] AND recipe:rdiff-backup-client")
+nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
 if nodes.empty?
   Chef::Log.info("No nodes returned from search")
-end
+else
+  # sort nodes alphabetically
+  nodes.sort! {|a,b| a.name <=> b.name }
 
-# sort nodes alphabetically
-nodes.sort! {|a,b| a.name <=> b.name }
+  # distribute backups across a certain time period every day
+  minutesbetweenbackups = ((node['rdiff-backup']['endhour'] - node['rdiff-backup']['starthour'] + 24) % 24 * 60 ) / nodes.size
+  hoursbetweenbackups = minutesbetweenbackups / 60
 
-# distribute backups across a certain time period every day
-minutesbetweenbackups = ((node['rdiff-backup']['endhour'] - node['rdiff-backup']['starthour'] + 24) % 24 * 60 ) / nodes.size
-hoursbetweenbackups = minutesbetweenbackups / 60
+  finishedbackups = 0
 
-finishedbackups = 0
+  nodes.each do |n|
+    minute = (minutesbetweenbackups * finishedbackups) % 60
+    hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['starthour']
 
-nodes.each do |n|
-  minute = (minutesbetweenbackups * finishedbackups) % 60
-  hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['starthour']
+    cron "rdiff-backup-#{n.name}" do
+      action :create
+      minute "#{minute}"
+      hour "#{hour}"
+      user "rdiff-backup-server"
+      mailto "root@osuosl.org"
+      command "rdiff-backup #{n.fqdn}:#{n['rdiff-backup']['backup-dirs']} #{node['rdiff-backup']['backup-target']}"
+    end
 
-  cron "rdiff-backup-#{n.name}" do
-    action :create
-    minute "#{minute}"
-    hour "#{hour}"
-    user "rdiff-backup-server"
-    mailto "root@osuosl.org"
-    command "rdiff-backup #{n.fqdn}:#{n['rdiff-backup']['backup-dirs']} #{node['rdiff-backup']['backup-target']}"
+    finishedbackups += 1
   end
-
-  finishedbackups += 1
 end
+
