@@ -1,14 +1,28 @@
-rdiff_user = ['rdiff-backup-server']
-rdiff_user << node['users']
-node.default['users'] = rdiff_user
+# default attributes
+default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
+default['rdiff-backup']['endhour'] = 23 #(7am PST) 
+default['rdiff-backup']['backup-target'] = "/data/rdiff-backup"
 
 # install rdiff-backup
 package "rdiff-backup" do
   action :install
 end
 
-# create the server backup user from the node['users'] attribute and its corresponding databag (its private key must be copied over manually)
-include_recipe "user::data_bag"
+# create the server backup group and user
+group 'rdiff-backup-server' do
+  system true
+end
+
+user 'rdiff-backup-server' do
+  comment 'User for rdiff-backup server backups'
+  gid 'rdiff-backup-server'
+  system true
+  shell '/bin/bash'
+  home '/home/rdiff-backup-server'
+  supports :manage_home => true
+end
+
+# (the server backup user's private key must be copied over manually)
 
 # find nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
