@@ -4,6 +4,7 @@ node.default['authorization']['sudo']['users'] = ['rdiff-backup-client']
 node.default['rdiff-backup']['source-dirs'] = ["/etc", "/var/log"]
 node.default['rdiff-backup']['destination-dir'] = "/data/rdiff-backup"
 node.default['rdiff-backup']['retention-period'] = "3M"
+node.default['rdiff-backup']['additional-args'] = ""
 
 # install rdiff-backup
 package "rdiff-backup" do

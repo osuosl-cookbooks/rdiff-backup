@@ -62,7 +62,7 @@ else
         mailto "root@osuosl.org"
         command "
           for path in#{pathlist};
-            do rdiff-backup --force --create-full-path \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
+            do rdiff-backup --force --create-full-path #{n.node['rdiff-backup']['additional-args']} \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
           done;
           for path in#{pathlist};
             do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['retention-period']} \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
