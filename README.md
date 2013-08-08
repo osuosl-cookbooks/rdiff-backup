@@ -22,14 +22,15 @@ Attributes
 
 * `node['users']` - Creates a client backup user account from the given databag, default rdiff-backup-client
 * `node['authorization']['sudo']['users']` - Gives sudo access to the backup user, default rdiff-backup-client
-* `node['rdiff-backup']['backup-dirs']` - Array of directories to back up, default empty
+* `node['rdiff-backup']['source-dirs']` - Array of directories to back up, default empty
+* `node['rdiff-backup']['retention-period']` - String defining how long to keep backups, default 3M (see rdiff-backup manual for --remove-older-than format)
 
 
 ## Server Attributes:
 
 * `node['rdiff-backup']['starthour']` - Earliest hour of the day to schedule backups, default 13
 * `node['rdiff-backup']['endhour']` - Latest hour of the day to schedule backups, default 23
-* `node['rdiff-backup']['backup-target']` - Location to store backups, default /data/rdiff-backup
+* `node['rdiff-backup']['destination-dir']` - Location to store backups, default /data/rdiff-backup
 
 Usage
 -----

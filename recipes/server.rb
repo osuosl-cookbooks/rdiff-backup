@@ -1,18 +1,19 @@
 # default attributes
 node.default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
 node.default['rdiff-backup']['endhour'] = 23 #(7am PST) 
-node.default['rdiff-backup']['backup-target'] = "/data/rdiff-backup"
+node.default['rdiff-backup']['destination-dir'] = "/data/rdiff-backup"
 
 # install rdiff-backup
 package "rdiff-backup" do
   action :install
 end
 
-# create the server backup group and user
+# create the server backup group
 group 'rdiff-backup-server' do
   system true
 end
 
+# create the server backup user
 user 'rdiff-backup-server' do
   comment 'User for rdiff-backup server backups'
   gid 'rdiff-backup-server'
@@ -27,7 +28,6 @@ end
 # find nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
 nodes = Array.new
-
 nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
 if nodes.empty?
@@ -46,13 +46,30 @@ else
     minute = (minutesbetweenbackups * finishedbackups) % 60
     hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['starthour']
 
-    cron "rdiff-backup-#{n.name}" do
-      action :create
-      minute "#{minute}"
-      hour "#{hour}"
-      user "rdiff-backup-server"
-      mailto "root@osuosl.org"
-      command "rdiff-backup #{n.fqdn}:#{n['rdiff-backup']['backup-dirs']} #{node['rdiff-backup']['backup-target']}"
+    if not n.node['rdiff-backup']['source-dirs'].empty?
+
+      # format the list of paths to back up
+      pathlist = String.new
+      n.node['rdiff-backup']['source-dirs'].each do |path|
+        pathlist += " \"" + path + "\""
+      end
+
+      # create cron job for each node to back them up and then remove old backups
+      cron_d "rdiff-backup-#{n.name}" do
+        action :create
+        minute "#{minute}"
+        hour "#{hour}"
+        user "rdiff-backup-server"
+        mailto "root@osuosl.org"
+        command "
+          for path in#{pathlist};
+            do rdiff-backup --force --create-full-path \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/#{n.node['fqdn']}/${path}\";
+          done;
+          for path in#{pathlist};
+            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['retention-period']} \"#{n.node['rdiff-backup']['destination-dir']}/#{n.node['fqdn']}/${path}\";
+          done;
+        "
+      end
     end
 
     finishedbackups += 1
