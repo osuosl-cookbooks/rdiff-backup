@@ -1,7 +1,6 @@
 # default attributes
 node.default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
 node.default['rdiff-backup']['endhour'] = 23 #(7am PST) 
-node.default['rdiff-backup']['destination-dir'] = "/data/rdiff-backup"
 
 # install rdiff-backup
 package "rdiff-backup" do
@@ -63,10 +62,10 @@ else
         mailto "root@osuosl.org"
         command "
           for path in#{pathlist};
-            do rdiff-backup --force --create-full-path \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/#{n.node['fqdn']}/${path}\";
+            do rdiff-backup --force --create-full-path \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
           done;
           for path in#{pathlist};
-            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['retention-period']} \"#{n.node['rdiff-backup']['destination-dir']}/#{n.node['fqdn']}/${path}\";
+            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['retention-period']} \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
           done;
         "
       end
