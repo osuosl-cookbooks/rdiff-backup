@@ -1,10 +1,12 @@
 # default attributes
-node.default['users'] = ['rdiff-backup-client']
-node.default['authorization']['sudo']['users'] = ['rdiff-backup-client']
-node.default['rdiff-backup']['source-dirs'] = ["/etc", "/var/log"]
-node.default['rdiff-backup']['destination-dir'] = "/data/rdiff-backup"
-node.default['rdiff-backup']['retention-period'] = "3M"
-node.default['rdiff-backup']['additional-args'] = ""
+node.default['rdiff-backup']['client']['ssh-port'] = "22"
+node.default['rdiff-backup']['client']['source-dirs'] = ["/etc", "/var/log"]
+node.default['rdiff-backup']['client']['destination-dir'] = "/data/rdiff-backup"
+node.default['rdiff-backup']['client']['retention-period'] = "3M"
+node.default['rdiff-backup']['client']['additional-args'] = ""
+node.default['rdiff-backup']['client']['user'] = "rdiff-backup-client"
+node.default['users'] = [node['rdiff-backup']['client']['user']]
+node.default['authorization']['sudo']['users'] = [node['rdiff-backup']['client']['user']]
 
 # install rdiff-backup
 package "rdiff-backup" do
@@ -12,16 +14,16 @@ package "rdiff-backup" do
 end
 
 # create the client backup group and user
-group 'rdiff-backup-client' do
+group node['rdiff-backup']['client']['user'] do
   system true
 end
 
-user 'rdiff-backup-client' do
+user node['rdiff-backup']['client']['user'] do
   comment 'User for rdiff-backup client backups'
-  gid 'rdiff-backup-client'
+  gid node['rdiff-backup']['client']['user']
   system true
   shell '/bin/bash'
-  home '/home/rdiff-backup-client'
+  home '/home/' + node['rdiff-backup']['client']['user']
   supports :manage_home => true
 end
 

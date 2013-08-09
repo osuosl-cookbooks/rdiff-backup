@@ -1,6 +1,7 @@
 # default attributes
-node.default['rdiff-backup']['starthour'] = 13 #(9pm PST) 
-node.default['rdiff-backup']['endhour'] = 23 #(7am PST) 
+node.default['rdiff-backup']['server']['starthour'] = 13 #(9pm PST) 
+node.default['rdiff-backup']['server']['endhour'] = 23 #(7am PST) 
+node.default['rdiff-backup']['server']['user'] = "rdiff-backup-server"
 
 # install rdiff-backup
 package "rdiff-backup" do
@@ -8,64 +9,75 @@ package "rdiff-backup" do
 end
 
 # create the server backup group
-group 'rdiff-backup-server' do
+group node['rdiff-backup']['server']['user'] do
   system true
 end
 
 # create the server backup user
-user 'rdiff-backup-server' do
+user node['rdiff-backup']['server']['user'] do
   comment 'User for rdiff-backup server backups'
-  gid 'rdiff-backup-server'
+  gid node['rdiff-backup']['server']['user']
   system true
   shell '/bin/bash'
-  home '/home/rdiff-backup-server'
+  home '/home/' + node['rdiff-backup']['server']['user']
   supports :manage_home => true
 end
 
 # (the server backup user's private key must be copied over manually)
 
-# find nodes to back up
+# search for nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
-nodes = Array.new
+nodes = Array.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
 nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
+# get nodes to back up from the unmanagedclients databag item too
+clientobjects = Hash.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
+clientobjects = data_bag_item('rdiff-backup', 'unmanagedclients')['clientobjects']
+clientobjects.each do |client|
+  client.each do |fqdn,properties| # there is really only one client per clientobject, fyi
+    newnode = ['fqdn' => fqdn, 'rdiff-backup' => node['rdiff-backup']['client']]
+    properties.each do |key,value|
+      newnode = Hash.new
+      newnode['rdiff-backup'] = Hash.new
+      newnode['rdiff-backup']['client'] = Hash.new
+      newnode['rdiff-backup']['client'][key] = value
+    end
+  end
+end
+
 if nodes.empty?
-  Chef::Log.info("No nodes returned from search")
+  Chef::Log.info("No nodes returned from search or rdiff-backup/unmanagedclients databag item")
 else
-  # sort nodes alphabetically
-  nodes.sort! {|a,b| a.name <=> b.name }
 
   # distribute backups across a certain time period every day
-  minutesbetweenbackups = ((node['rdiff-backup']['endhour'] - node['rdiff-backup']['starthour'] + 24) % 24 * 60 ) / nodes.size
+  minutesbetweenbackups = ((node['rdiff-backup']['server']['endhour'] - node['rdiff-backup']['server']['starthour'] + 24) % 24 * 60 ) / nodes.size
   hoursbetweenbackups = minutesbetweenbackups / 60
-
   finishedbackups = 0
-
   nodes.each do |n|
     minute = (minutesbetweenbackups * finishedbackups) % 60
-    hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['starthour']
+    hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['server']['starthour']
 
-    if not n.node['rdiff-backup']['source-dirs'].empty?
+    if !n.node['rdiff-backup']['client']['source-dirs'].empty?
 
       # format the list of paths to back up
       pathlist = String.new
-      n.node['rdiff-backup']['source-dirs'].each do |path|
+      n.node['rdiff-backup']['client']['source-dirs'].each do |path|
         pathlist += " \"" + path + "\""
       end
 
       # create cron job for each node to back them up and then remove old backups
-      cron_d "rdiff-backup-#{n.name}" do
+      cron_d "rdiff-backup-#{n.fqdn}" do
         action :create
         minute "#{minute}"
         hour "#{hour}"
-        user "rdiff-backup-server"
+        user node['rdiff-backup']['server']['user']
         mailto "root@osuosl.org"
         command "
           for path in#{pathlist};
-            do rdiff-backup --force --create-full-path #{n.node['rdiff-backup']['additional-args']} \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
+            do rdiff-backup --force --create-full-path #{n.node['rdiff-backup']['client']['additional-args']}\:#{node['rdiff-backup']['client']['ssh-port']} \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
           done;
           for path in#{pathlist};
-            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['retention-period']} \"#{n.node['rdiff-backup']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
+            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['client']['retention-period']} \"#{n.node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
           done;
         "
       end
