@@ -22,23 +22,42 @@ end
 
 # search for nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
-nodes = Array.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
+nodes = Array.new
 nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
-# get nodes to back up from the unmanagedclients databag item too
-#clientobjects = Hash.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
-#clientobjects = data_bag_item('rdiff-backup', 'unmanagedclients')['clientobjects']
-#clientobjects.each do |client|
-#  client.each do |fqdn,properties| # there is really only one client per clientobject, fyi
-#    newnode = ['fqdn' => fqdn, 'rdiff-backup' => node['rdiff-backup']['client']]
-#    properties.each do |key,value|
-#      newnode = Hash.new
-#      newnode['rdiff-backup'] = Hash.new
-#      newnode['rdiff-backup']['client'] = Hash.new
-#      newnode['rdiff-backup']['client'][key] = value
-#    end
-#  end
-#end
+# get nodes to back up from the unmanagedhosts databag too
+unmanagedhosts = Array.new
+unmanagedhosts = data_bag('rdiff-backup_unmanagedhosts')
+unmanagedhosts.each do |host|
+  
+  hostbag = Hash.new
+  hostbag = data_bag_item('rdiff-backup_unmanagedhosts', host)
+  
+  # Create a new "node" hash for each unmanaged host and populate it with the default client attributes (assuming that the client attributes on the rdiff-backup server are in fact the default attributes; the rdiff-backup server should not also be an rdiff-backup client and therefore should not have had its attributes modified).
+  newnode = Hash.new
+  newnode['rdiff-backup'] = Hash.new
+  newnode['rdiff-backup']['client'] = Hash.new
+  node['rdiff-backup']['client'].each do |k,v|
+    newnode['rdiff-backup']['client'].merge!({ k => v })
+  end
+  newnode['fqdn'] = hostbag['fqdn']
+
+  # Only continue if the fqdn is present.
+  if 1
+  #if newnode['fqdn'] != nil
+
+    # Override the the default attributes with any other properties present in the databag.
+    hostbag.each do |k,v|
+      if k != "id" && k != "fqdn"
+        newnode['rdiff-backup']['client'][k] = v
+      end
+    end
+    
+    # Add the new node to the list of nodes to back up.
+    nodes << newnode
+
+  end
+end
 
 if nodes.empty?
   Chef::Log.info("No nodes returned from search or rdiff-backup/unmanagedclients databag item")
@@ -52,11 +71,11 @@ else
     minute = (minutesbetweenbackups * finishedbackups) % 60
     hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['server']['starthour']
 
-    if !n.node['rdiff-backup']['client']['source-dirs'].empty?
+    if !n['rdiff-backup']['client']['source-dirs'].empty?
 
       # format the list of paths to back up
       pathlist = String.new
-      n.node['rdiff-backup']['client']['source-dirs'].each do |path|
+      n['rdiff-backup']['client']['source-dirs'].each do |path|
         pathlist += " \"" + path + "\""
       end
 
@@ -71,13 +90,13 @@ else
       destpath = "#{dest}/filesystem/#{fqdn}/${path}"
 
       # create cron job for each node to back them up and then remove old backups
-      cron_d "rdiff-backup-#{n.fqdn}" do
+      cron_d "rdiff-backup-#{fqdn}" do
         action :create
         minute "#{minute}"
         hour "#{hour}"
         user node['rdiff-backup']['server']['user']
         mailto "root@osuosl.org"
-        command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done;"
+        command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
       end
     end
 
