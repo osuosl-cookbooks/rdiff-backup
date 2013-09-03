@@ -1,8 +1,3 @@
-# default attributes
-node.default['rdiff-backup']['server']['starthour'] = 13 #(9pm PST) 
-node.default['rdiff-backup']['server']['endhour'] = 23 #(7am PST) 
-node.default['rdiff-backup']['server']['user'] = "rdiff-backup-server"
-
 # install rdiff-backup
 package "rdiff-backup" do
   action :install
@@ -31,19 +26,19 @@ nodes = Array.new # Can this line be removed?  It seems pointless to someone who
 nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
 # get nodes to back up from the unmanagedclients databag item too
-clientobjects = Hash.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
-clientobjects = data_bag_item('rdiff-backup', 'unmanagedclients')['clientobjects']
-clientobjects.each do |client|
-  client.each do |fqdn,properties| # there is really only one client per clientobject, fyi
-    newnode = ['fqdn' => fqdn, 'rdiff-backup' => node['rdiff-backup']['client']]
-    properties.each do |key,value|
-      newnode = Hash.new
-      newnode['rdiff-backup'] = Hash.new
-      newnode['rdiff-backup']['client'] = Hash.new
-      newnode['rdiff-backup']['client'][key] = value
-    end
-  end
-end
+#clientobjects = Hash.new # Can this line be removed?  It seems pointless to someone who is new to Ruby.
+#clientobjects = data_bag_item('rdiff-backup', 'unmanagedclients')['clientobjects']
+#clientobjects.each do |client|
+#  client.each do |fqdn,properties| # there is really only one client per clientobject, fyi
+#    newnode = ['fqdn' => fqdn, 'rdiff-backup' => node['rdiff-backup']['client']]
+#    properties.each do |key,value|
+#      newnode = Hash.new
+#      newnode['rdiff-backup'] = Hash.new
+#      newnode['rdiff-backup']['client'] = Hash.new
+#      newnode['rdiff-backup']['client'][key] = value
+#    end
+#  end
+#end
 
 if nodes.empty?
   Chef::Log.info("No nodes returned from search or rdiff-backup/unmanagedclients databag item")
@@ -65,6 +60,16 @@ else
         pathlist += " \"" + path + "\""
       end
 
+      # Shortening the variables here to make the giant rdiff-backup command more readable
+      fqdn = n['fqdn']
+      port = n['rdiff-backup']['client']['ssh-port']
+      src = n['rdiff-backup']['client']['source-dirs']
+      dest = n['rdiff-backup']['client']['destination-dir']
+      period = n['rdiff-backup']['client']['retention-period']
+      args = n['rdiff-backup']['client']['additional-args']
+      user = n['rdiff-backup']['client']['user']
+      destpath = "#{dest}/filesystem/#{fqdn}/${path}"
+
       # create cron job for each node to back them up and then remove old backups
       cron_d "rdiff-backup-#{n.fqdn}" do
         action :create
@@ -72,14 +77,7 @@ else
         hour "#{hour}"
         user node['rdiff-backup']['server']['user']
         mailto "root@osuosl.org"
-        command "
-          for path in#{pathlist};
-            do rdiff-backup --force --create-full-path #{n.node['rdiff-backup']['client']['additional-args']}\:#{node['rdiff-backup']['client']['ssh-port']} \"#{n.node['fqdn']}\:${path}\" \"#{n.node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
-          done;
-          for path in#{pathlist};
-            do rdiff-backup --force --remove-older-than #{n.node['rdiff-backup']['client']['retention-period']} \"#{n.node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n.node['fqdn']}/${path}\";
-          done;
-        "
+        command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done;"
       end
     end
 
