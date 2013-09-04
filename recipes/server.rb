@@ -43,8 +43,7 @@ unmanagedhosts.each do |host|
   newnode['fqdn'] = hostbag['fqdn']
 
   # Only continue if the fqdn is present.
-  if 1
-  #if newnode['fqdn'] != nil
+  if newnode['fqdn'] != nil
 
     # Override the the default attributes with any other properties present in the databag.
     hostbag.each do |k,v|
