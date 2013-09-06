@@ -3,11 +3,12 @@ package "rdiff-backup" do
   action :install
 end
 
-# Create the client backup group and user
+# Create the server backup group
 group node['rdiff-backup']['client']['user'] do
   system true
 end
 
+# Create the server backup user
 user node['rdiff-backup']['client']['user'] do
   comment 'User for rdiff-backup client backups'
   gid node['rdiff-backup']['client']['user']
