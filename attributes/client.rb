@@ -1,6 +1,6 @@
 # default attributes
 node.default['rdiff-backup']['client']['ssh-port'] = "22"
-node.default['rdiff-backup']['client']['source-dirs'] = ["/etc", "/var/log"]
+node.default['rdiff-backup']['client']['source-dirs'] = [""]
 node.default['rdiff-backup']['client']['destination-dir'] = "/data/rdiff-backup"
 node.default['rdiff-backup']['client']['retention-period'] = "3M"
 node.default['rdiff-backup']['client']['additional-args'] = ""

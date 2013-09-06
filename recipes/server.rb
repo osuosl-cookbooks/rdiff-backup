@@ -1,14 +1,14 @@
-# install rdiff-backup
+# Install rdiff-backup
 package "rdiff-backup" do
   action :install
 end
 
-# create the server backup group
+# Create the server backup group
 group node['rdiff-backup']['server']['user'] do
   system true
 end
 
-# create the server backup user
+# Create the server backup user
 user node['rdiff-backup']['server']['user'] do
   comment 'User for rdiff-backup server backups'
   gid node['rdiff-backup']['server']['user']
@@ -18,14 +18,18 @@ user node['rdiff-backup']['server']['user'] do
   supports :manage_home => true
 end
 
-# (the server backup user's private key must be copied over manually)
+# (The server backup user's private key must be copied over manually)
 
-# search for nodes to back up
+# Search for nodes to back up
 Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
 nodes = Array.new
-nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
+if node['rdiff-backup']['server']['restrict-to-own-environment']
+  nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\] AND chef_environment:#{node.chef_environment}')
+else
+  nodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
+end
 
-# get nodes to back up from the unmanagedhosts databag too
+# Get nodes to back up from the unmanagedhosts databag too
 unmanagedhosts = Array.new
 unmanagedhosts = data_bag('rdiff-backup_unmanagedhosts')
 unmanagedhosts.each do |host|
@@ -33,28 +37,31 @@ unmanagedhosts.each do |host|
   hostbag = Hash.new
   hostbag = data_bag_item('rdiff-backup_unmanagedhosts', host)
   
-  # Create a new "node" hash for each unmanaged host and populate it with the default client attributes (assuming that the client attributes on the rdiff-backup server are in fact the default attributes; the rdiff-backup server should not also be an rdiff-backup client and therefore should not have had its attributes modified).
+  # Create a new "node" hash for each unmanaged host and populate it with the default client attributes (assuming that the client attributes on the rdiff-backup server are in fact intended to be the default attributes).
   newnode = Hash.new
   newnode['rdiff-backup'] = Hash.new
   newnode['rdiff-backup']['client'] = Hash.new
   node['rdiff-backup']['client'].each do |k,v|
     newnode['rdiff-backup']['client'].merge!({ k => v })
   end
-  newnode['fqdn'] = hostbag['fqdn']
+  newnode['rdiff-backup']['client']['environment'] = "_default" # Environment is set manually because it's not an rdiff-backup client attribute. It just acts like one for coding convenience.
 
-  # Only continue if the fqdn is present.
-  if newnode['fqdn'] != nil
+  newnode['fqdn'] = hostbag['id'] # We can assume the id exists because otherwise it's not a valid databag and wouldn't be returned by the data_bag_item function.
 
-    # Override the the default attributes with any other properties present in the databag.
-    hostbag.each do |k,v|
-      if k != "id" && k != "fqdn"
-        newnode['rdiff-backup']['client'][k] = v
-      end
+  # Override the the default attributes with any other properties present in the databag.
+  hostbag.each do |k,v|
+    if k != "fqdn"
+      newnode['rdiff-backup']['client'][k] = v
     end
-    
-    # Add the new node to the list of nodes to back up.
+  end
+  
+  # Add the new node to the list of nodes to back up if it's in the proper environment.
+  if node['rdiff-backup']['server']['restrict-to-own-environment']
+    if node['chef_environment'] == newnode['rdiff-backup']['client']['environment']
+      nodes << newnode
+    end
+  else
     nodes << newnode
-
   end
 end
 
@@ -62,7 +69,7 @@ if nodes.empty?
   Chef::Log.info("No nodes returned from search or rdiff-backup/unmanagedclients databag item")
 else
 
-  # distribute backups across a certain time period every day
+  # Distribute backups across a certain time period every day
   minutesbetweenbackups = ((node['rdiff-backup']['server']['endhour'] - node['rdiff-backup']['server']['starthour'] + 24) % 24 * 60 ) / nodes.size
   hoursbetweenbackups = minutesbetweenbackups / 60
   finishedbackups = 0
@@ -72,13 +79,13 @@ else
 
     if !n['rdiff-backup']['client']['source-dirs'].empty?
 
-      # format the list of paths to back up
+      # Format the list of paths to back up
       pathlist = String.new
       n['rdiff-backup']['client']['source-dirs'].each do |path|
         pathlist += " \"" + path + "\""
       end
 
-      # Shortening the variables here to make the giant rdiff-backup command more readable
+      # Shorten the variables here to make the giant rdiff-backup command more readable
       fqdn = n['fqdn']
       port = n['rdiff-backup']['client']['ssh-port']
       src = n['rdiff-backup']['client']['source-dirs']
@@ -88,7 +95,15 @@ else
       user = n['rdiff-backup']['client']['user']
       destpath = "#{dest}/filesystem/#{fqdn}/${path}"
 
-      # create cron job for each node to back them up and then remove old backups
+      # Create the base directory that this node's backups will go to (enough so that the rdiff-backup server user have write permission)
+      directory "#{dest}" do
+        owner "#{node['rdiff-backup']['server']['user']}"
+        group "#{node['rdiff-backup']['server']['user']}"
+        mode '0775'
+        action :create
+      end
+
+      # Create cron job for each node to back them up and then remove old backups
       cron_d "rdiff-backup-#{fqdn}" do
         action :create
         minute "#{minute}"

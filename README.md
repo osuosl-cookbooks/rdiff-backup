@@ -8,8 +8,17 @@ Requirements
 
 ## Cookbooks:
 
-* Sudo
-* User
+* chef-user
+* sudo (unless using root as rdiff-backup-client)
+* nagios (for nagios alerts regarding backup statuses)
+
+Features
+--------
+
+* Can back up clients managed by Chef
+* Can back up clients not managed by Chef
+* [Planned] Can back up MySQL and PostgreSQL databases
+* [Planned] Can send Nagios alerts when backups fail or do not run
 
 Attributes
 ----------
@@ -19,11 +28,12 @@ Attributes
 * `node['rdiff-backup']['server']['starthour']` - Earliest hour of the day to schedule backups, default "13"
 * `node['rdiff-backup']['server']['endhour']` - Latest hour of the day to schedule backups, default "23"
 * `node['rdiff-backup']['server']['user']` - User to run backups with on the server side, default "rdiff-backup-server"
+* `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
 
 ## Client Attributes:
 
 * `node['rdiff-backup']['client']['ssh-port']` - SSH port to connect to, default "22"
-* `node['rdiff-backup']['client']['source-dirs']` - Array of directories to back up, default none
+* `node['rdiff-backup']['client']['source-dirs']` - Array of directories to back up, default ""
 * `node['rdiff-backup']['client']['destination-dir']` - Location to store backups on the server side, default "/data/rdiff-backup"
 * `node['rdiff-backup']['client']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `node['rdiff-backup']['client']['additional-args']` - Additional arguments to pass to rdiff-backup, default empty
@@ -32,7 +42,9 @@ Attributes
 Usage
 -----
 
-Generate an ssh keypair and create a myclientbackupusername.json in the "user" databag for the rdiff-backup client user containing the pubkey and its user id.
+Note: It is not advised to let the rdiff-backup server also be an rdiff-backup client because the client attributes that the server has will be used as the defaults for all unmanaged hosts.
+
+To set up this cookbook, generate an ssh keypair and create a myclientbackupusername.json in the "user" databag for the rdiff-backup client user containing the pubkey and its user id.
 
 Example data_bags/user/rdiff-backup-client.json:
 
@@ -51,13 +63,13 @@ Include `recipe[rdiff-backup]` in your node's `run_list` and set the node['rdiff
 
 ## Client (unmanaged):
 
-Install rdiff-backup on the client, create the backup user, give it passwordless sudo access, and add the server user's pubkey to its authorized_keys.  Then, in the rdiff-backup_unmanagedhosts databag, create an entry with the client's info.  At the very least, each entry must have an id and an fqdn, but they may also specify any rdiff-backup client attributes.  The recipe defaults will be used for any attributes not specified in the databag.  Managed hosts can also have databag entries if managing their attributes through node definitions is not ideal.  Note that if a managed host has a databag entry, any attributes set in the host's node definition will be ignored entirely.
+Install rdiff-backup on the client, create the backup user, give it passwordless sudo access, and add the server user's pubkey to its authorized_keys.  Then, in the rdiff-backup_unmanagedhosts databag, create an entry with the client's info.  At the very least, each entry must have an id that corresponds to its fqdn, but they may also specify rdiff-backup client attributes, as well as an "environment" to make sure the host gets backed up by the right server.  If not specified in the databag, the environment will default to "_default" and the rdiff-backup client attributes will default to whatever client attributes the server has.  Managed hosts can also have databag entries if managing their attributes through node definitions is not ideal.  Note that if a managed host has a databag entry, any attributes set in the host's node definition will be ignored entirely.
 
 Example data_bags/rdiff-backup_unmanagedhosts/myserver.mydomain.com.json:
 
 {
-    "id": "myserver",
-    "fqdn": "myserver.mydomain.com",
+    "id": "myserver.mydomain.com",
+    "environment": "dev"
     "source-dirs": ["/etc","/var/log"],
     "retention-period": "5m"
 }
