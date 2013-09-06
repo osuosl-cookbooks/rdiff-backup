@@ -18,5 +18,16 @@ user node['rdiff-backup']['client']['user'] do
   supports :manage_home => true
 end
 
-# Copy over the client backup user's ssh pubkey from the node['users'] attribute and its corresponding databag
+# Figure out which pubkey to give the user. If there are environment-specific databag entries, use them. Otherwise, use the generic one.
+if data_bag_item("users", "#{node['rdiff-backup']['client']['user']}-#{node['chef_environment']}")
+  node.default['users'] = ["#{node['rdiff-backup']['client']['user']}-#{node['chef_environment']}"]
+else
+  node.default['users'] = ["#{node['rdiff-backup']['client']['user']}"]
+end
+
+# Copy over the user's ssh pubkey from the node['users'] attribute and its corresponding databag
 include_recipe "user::data_bag"
+
+# Now give the user sudo access
+node.default['authorization']['sudo']['users'] = [node['rdiff-backup']['client']['user']]
+
