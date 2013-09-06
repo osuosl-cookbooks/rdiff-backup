@@ -66,12 +66,12 @@ Include `recipe[rdiff-backup]` in your node's `run_list` and set the node['rdiff
 
 ## Client (unmanaged):
 
-Install rdiff-backup on the client, create the backup user, give it passwordless sudo access, and add the server user's pubkey to its authorized_keys.  Then, in the rdiff-backup_unmanagedhosts databag, create an entry with the client's info.  At the very least, each entry must have an id that corresponds to its fqdn, but they may also specify rdiff-backup client attributes, as well as an "environment" to make sure the host gets backed up by the right server.  If not specified in the databag, the environment will default to "_default" and the rdiff-backup client attributes will default to whatever client attributes the server has.  Managed hosts can also have databag entries if managing their attributes through node definitions is not ideal.  Note that if a managed host has a databag entry, any attributes set in the host's node definition will be ignored entirely.
+Install rdiff-backup on the client, create the backup user, give it passwordless sudo access, and add the server user's pubkey to its authorized_keys.  Then, in the rdiff-backup_unmanagedhosts databag, create an entry with the client's info.  At the very least, each entry must have an id that corresponds to its fqdn (with underscores replacing all periods), but they may also specify rdiff-backup client attributes, as well as an "environment" to make sure the host gets backed up by the right server.  If not specified in the databag, the environment will default to "_default" and the rdiff-backup client attributes will default to whatever client attributes the server has.  Managed hosts can also have databag entries if managing their attributes through node definitions is not ideal.  Note that if a managed host has a databag entry, any attributes set in the host's node definition will be ignored entirely.
 
 Example data_bags/rdiff-backup_unmanagedhosts/myserver.mydomain.com.json:
 
 {
-    "id": "myserver.mydomain.com",
+    "id": "myserver_mydomain_com",
     "environment": "dev"
     "source-dirs": ["/etc","/var/log"],
     "retention-period": "5m"
