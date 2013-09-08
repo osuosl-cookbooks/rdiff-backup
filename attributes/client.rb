@@ -1,4 +1,4 @@
-# Default attributes
+# Default attributes.
 node.default['rdiff-backup']['client']['ssh-port'] = "22"
 node.default['rdiff-backup']['client']['source-dirs'] = [""]
 node.default['rdiff-backup']['client']['destination-dir'] = "/data/rdiff-backup"
