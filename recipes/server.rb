@@ -21,7 +21,7 @@ end
 # Note: The server backup user's private key must be copied over manually.
 
 # Search for nodes to back up.
-Chef::Log.info("Beginning search for nodes.  This may take some time depending on your node count")
+Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
 rawnodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
 # Convert the nodes to hashes for easy management.
