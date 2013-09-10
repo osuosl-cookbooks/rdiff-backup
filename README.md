@@ -61,7 +61,7 @@ Include `recipe[rdiff-backup::server]` in your node's `run_list`, and copy the s
 
 ## Client (managed):
 
-Include `recipe[rdiff-backup]` in your node's `run_list` and set the node['rdiff-backup']['source-dirs'] attribute for it (preferably in a role).
+Include `recipe[rdiff-backup]` or `recipe[rdiff-backup::client]` in your node's `run_list` and set the node['rdiff-backup']['source-dirs'] attribute for it (preferably in a role).
 
 ## Client (unmanaged):
 

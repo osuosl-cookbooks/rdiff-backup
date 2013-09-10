@@ -78,8 +78,11 @@ if node['rdiff-backup']['server']['restrict-to-own-environment']
   end
 end
 
+# Keep track of nodes to delete again so we can make sure to remove jobs for hosts with no source-dirs.
+nodestodelete = Array.new
+
 if nodes.empty?
-  Chef::Log.info("No nodes returned from search or found in rdiff-backup_unmanagedclients databag. Exiting.")
+  Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_unmanagedclients databag.")
 else
 
   # Distribute backups across a certain time period every day.
@@ -117,14 +120,20 @@ else
         action :create
       end
 
-      # Create cron job for each node to back them up and then remove old backups.
-      cron_d "rdiff-backup-#{fqdn}" do
-        action :create
-        minute minute
-        hour hour
-        user node['rdiff-backup']['server']['user']
-        mailto "root@osuosl.org"
-        command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
+      # If there are any paths to back up...
+      if pathlist != " \"\""
+        # Create cron job for the node to back them up and then remove old backups.
+        cron_d "rdiff-backup-#{fqdn}" do
+          action :create
+          minute minute
+          hour hour
+          user node['rdiff-backup']['server']['user']
+          mailto "root@osuosl.org"
+          command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
+        end
+      else
+        # Delete this node from the array of hosts to keep jobs for, so that their old jobs will be deleted.
+        nodestodelete << n
       end
     end
 
@@ -132,3 +141,16 @@ else
   end
 end
 
+# Delete all rdiff-backup cron jobs that we didn't just enforce the existence of (useful for when you disable backups for a host). The reason why we don't just delete all cron jobs at the beginning of the recipe is so that valid cron jobs are always available, so that backups will run on time regardless of when the chef-client runs.
+nodestodelete.each do |n|
+  nodes.delete(n)
+end
+files = Dir.glob("/etc/cron.d/rdiff-backup-*")
+nodes.each do |n|
+  if files.include?(n['fqdn'])
+    files.delete(n['fqdn'])
+  end
+end
+files.each do |f|
+  File.delete(f)
+end
