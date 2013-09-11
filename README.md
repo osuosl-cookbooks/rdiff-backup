@@ -49,8 +49,8 @@ To set up this cookbook, generate an ssh keypair and create a myclientbackupuser
 Example data_bags/user/rdiff-backup-client.json:
 
 {
-  "id"        : "rdiff-backup-client-environment-dev",
-  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"rdiff-backup --server --restrict-read-only / --restrict /data/rdiff-backup-restores\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
+  "id"        : "rdiff-backup-client",
+  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"sudo rdiff-backup --server --restrict-read-only /\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
 }
 
 To allow two rdiff-backup servers to run independently of each other in different environments, each with their own keys and clients, you must use different usernames.
