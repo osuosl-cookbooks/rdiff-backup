@@ -25,5 +25,10 @@ if data_bag("users").include?("#{node['rdiff-backup']['client']['user']}")
   include_recipe "user::data_bag"
 end
 
-# Give the user sudo access.
-node.default['authorization']['sudo']['users'] = [node['rdiff-backup']['client']['user']]
+# Give the user sudo access for the rdiff-backup command.
+sudo node['rdiff-backup']['client']['user'] do
+  user      node['rdiff-backup']['client']['user']
+  runas     'root'
+  nopasswd  true
+  commands  ['/usr/bin/rdiff-backup --server --restrict-read-only /']
+end
