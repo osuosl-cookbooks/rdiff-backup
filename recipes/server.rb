@@ -64,8 +64,10 @@ unmanagedhosts.each do |host|
   nodes << newnode
 end
 
-# Filter out clients not in our environment, if applicable.
+# Keep track of nodes that we are no longer backing up so we can make sure to remove jobs and/or nagios checks for them.
 nodestodelete = Array.new
+
+# Filter out clients not in our environment, if applicable.
 if node['rdiff-backup']['server']['restrict-to-own-environment']
   nodes.each do |n|
     if n['chef_environment'] != node.chef_environment
@@ -77,9 +79,6 @@ if node['rdiff-backup']['server']['restrict-to-own-environment']
     nodes.delete(n)
   end
 end
-
-# Keep track of nodes to delete again so we can make sure to remove jobs for hosts with no source-dirs.
-nodestodelete = Array.new
 
 if nodes.empty?
   Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_unmanagedclients databag.")
@@ -132,7 +131,7 @@ else
           command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
         end
       else
-        # Delete this node from the array of hosts to keep jobs for, so that their old jobs will be deleted.
+        # Delete this node from the array of hosts to keep jobs for, so that its job will be deleted.
         nodestodelete << n
       end
     end
@@ -153,4 +152,41 @@ nodes.each do |n|
 end
 files.each do |f|
   File.delete(f)
+end
+
+# Set up Nagios checks for the backups if the server has the nagios::client recipe and node['rdiff-backup']['server']['nagios'] = true.
+if node.recipes.include?("nagios::client")
+  if node['rdiff-backup']['server']['nagios']
+    nodes.each do |n|
+
+      # Copy over the check_rdiff nrpe plugin.
+      cookbook_file "#{n['nagios']['plugin_dir']}/check_rdiff" do
+        path "/nagios/plugins/check_rdiff"
+        action :create
+      end
+      
+      # Create the check.
+      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
+        command "#{n['nagios']['plugin_dir']}/check_rdiff"
+        warning_condition node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
+        critical node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
+        action :add
+      end
+    end
+    
+    # Delete checks for hosts we no longer back up.
+    nodestodelete.each do |n|
+      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
+        action :remove
+      end
+    end
+
+  # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
+  else
+    nodes.merge!(nodestodelete).each do |n|
+      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
+        action :remove
+      end
+    end
+  end
 end

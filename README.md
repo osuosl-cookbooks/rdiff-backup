@@ -29,6 +29,7 @@ Attributes
 * `node['rdiff-backup']['server']['endhour']` - Latest hour of the day to schedule backups, default "23"
 * `node['rdiff-backup']['server']['user']` - User to run backups with on the server side, default "rdiff-backup-server"
 * `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
+* `node['rdiff-backup']['server']['nagios-alerts']` - Whether to provide Nagios alerts for status of each backup if the server has the nagios::client recipe, default "true"
 
 ## Client Attributes:
 
