@@ -19,9 +19,9 @@ user node['rdiff-backup']['client']['user'] do
 end
 
 # As long as the pubkey databag exists for the user...
-if data_bag("users").include?("#{node['rdiff-backup']['client']['user']}")
+if data_bag("users").include?(node['rdiff-backup']['client']['user'])
   # Copy over the user's ssh pubkey.
-  node.default['users'] = ["#{node['rdiff-backup']['client']['user']}"]
+  node.default['users'] = [node['rdiff-backup']['client']['user']]
   include_recipe "user::data_bag"
 end
 
