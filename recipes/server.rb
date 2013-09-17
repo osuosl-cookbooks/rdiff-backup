@@ -25,14 +25,14 @@ Chef::Log.info("Beginning search for nodes. This may take some time depending on
 rawnodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
 
 # Convert the nodes to hashes for easy management.
-nodes = Array.new
+nodes = Set.new
 rawnodes.each do |rawnode|
   nodes << rawnode.to_hash
 end
 
 # Get nodes to back up from the unmanagedhosts databag too.
-unmanagedhosts = Array.new
-unmanagedhosts = data_bag('rdiff-backup_unmanagedhosts')
+unmanagedhosts = Set.new
+unmanagedhosts = data_bag('rdiff-backup_unmanagedhosts').to_set
 unmanagedhosts.each do |host|
   
   hostbag = Hash.new
@@ -65,7 +65,7 @@ unmanagedhosts.each do |host|
 end
 
 # Keep track of nodes that we are no longer backing up so we can make sure to remove jobs and/or nagios checks for them.
-nodestodelete = Array.new
+nodestodelete = Set.new
 
 # Filter out clients not in our environment, if applicable.
 if node['rdiff-backup']['server']['restrict-to-own-environment']
@@ -183,7 +183,7 @@ if node.recipes.include?("nagios::client")
 
   # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
   else
-    nodes.merge!(nodestodelete).each do |n|
+    nodes.merge(nodestodelete).each do |n|
       nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
         action :remove
       end
