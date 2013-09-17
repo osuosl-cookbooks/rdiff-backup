@@ -128,7 +128,7 @@ else
           hour hour
           user node['rdiff-backup']['server']['user']
           mailto "root@osuosl.org"
-          command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} %s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
+          command "for path in#{pathlist}; do rdiff-backup --force --create-full-path --remote-schema \"ssh -Cp #{port} \\%s sudo rdiff-backup --server --restrict-read-only /\" #{args} \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
         end
       else
         # Delete this node from the array of hosts to keep jobs for, so that its job will be deleted.
