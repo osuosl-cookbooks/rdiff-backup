@@ -154,29 +154,40 @@ files.each do |f|
   File.delete(f)
 end
 
-# Set up Nagios checks for the backups if the server has the nagios::client recipe and node['rdiff-backup']['server']['nagios'] = true.
+# Set up Nagios checks for the backups if the server has the nagios::client recipe and node['rdiff-backup']['server']['nagios-alerts'] = true.
 if node.recipes.include?("nagios::client")
-  if node['rdiff-backup']['server']['nagios']
-    nodes.each do |n|
+  if node['rdiff-backup']['server']['nagios-alerts']
 
-      # Copy over the check_rdiff nrpe plugin.
-      cookbook_file "#{n['nagios']['plugin_dir']}/check_rdiff" do
-        path "/nagios/plugins/check_rdiff"
-        action :create
-      end
+    # Copy over the check_rdiff nrpe plugin.
+    cookbook_file "#{node['nagios']['plugin_dir']}/check_rdiff" do
+      source "nagios/plugins/check_rdiff"
+      mode '755'
+      action :create
+    end
+
+    # For each node...
+    nodes.each do |n|
+      
+      # For each directory to be backed up...
+      n['rdiff-backup']['client']['source-dirs'].each do |sd|
+
+      # Shorten the variables to make the check command more readable.
+      warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
+      crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
+      #maxchange = node['rdiff-backup']['client']['nagios-maxchange']
+      #maxtime = node['rdiff-backup']['client']['nagios-maxtime']
       
       # Create the check.
-      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
-        command "#{n['nagios']['plugin_dir']}/check_rdiff"
-        warning_condition node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
-        critical node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
-        action :add
+        nagios_nrpecheck "check_rdiff" do
+          command "#{node['nagios']['plugin_dir']}/check_rdiff -r #{sd} -w #{warn} -c #{crit} -l 500 -p 24"
+          action :add
+        end
       end
     end
     
     # Delete checks for hosts we no longer back up.
     nodestodelete.each do |n|
-      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
+      nagios_nrpecheck "check_rdiff" do
         action :remove
       end
     end

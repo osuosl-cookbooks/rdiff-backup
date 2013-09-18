@@ -47,7 +47,7 @@ Note: It is not advised to let the rdiff-backup server also be an rdiff-backup c
 
 To set up this cookbook, generate an ssh keypair and create a myclientbackupusername.json in the "user" databag for the rdiff-backup client user containing the pubkey and its user id.
 
-Example data_bags/user/rdiff-backup-client.json:
+Example data_bags/users/rdiff-backup-client.json:
 
 {
   "id"        : "rdiff-backup-client",
@@ -58,7 +58,7 @@ To allow two rdiff-backup servers to run independently of each other in differen
 
 ## Server:
 
-Include `recipe[rdiff-backup::server]` in your node's `run_list`, and copy the ssh private key to the rdiff-backup-server's ~/.ssh/id_rsa.
+Include `recipe[rdiff-backup::server]` in your node's `run_list`, and copy the ssh private key to the rdiff-backup server's ~/.ssh/id_rsa.
 
 ## Client (managed):
 
