@@ -166,7 +166,7 @@ if node.recipes.include?("nagios::client")
     end
 
     # Give the user sudo access for the nrpe plugin.
-    sudo nrpe do
+    sudo 'nrpe' do
       user      'nrpe'
       runas     'root'
       nopasswd  true
