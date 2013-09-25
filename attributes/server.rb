@@ -6,3 +6,6 @@ node.default['rdiff-backup']['server']['restrict-to-own-environment'] = true
 node.default['rdiff-backup']['server']['nagios-alerts'] = true
 node.default['rdiff-backup']['server']['nagios-warning'] = 2 # 2 hours after endhour
 node.default['rdiff-backup']['server']['nagios-critical'] = 4 # 4 hours after endhour
+
+# This is required for sudo access to work.
+node.default['authorization']['sudo']['include_sudoers_d'] = true

@@ -165,6 +165,14 @@ if node.recipes.include?("nagios::client")
       action :create
     end
 
+    # Give the user sudo access for the nrpe plugin.
+    sudo nrpe do
+      user      'nrpe'
+      runas     'root'
+      nopasswd  true
+      commands  ["#{node['nagios']['plugin_dir']}/check_rdiff"]
+    end
+
     # For each node...
     nodes.each do |n|
       
@@ -172,14 +180,15 @@ if node.recipes.include?("nagios::client")
       n['rdiff-backup']['client']['source-dirs'].each do |sd|
 
       # Shorten the variables to make the check command more readable.
+      dd = "#{node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
       warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
       crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
       #maxchange = node['rdiff-backup']['client']['nagios-maxchange']
       #maxtime = node['rdiff-backup']['client']['nagios-maxtime']
       
       # Create the check.
-        nagios_nrpecheck "check_rdiff" do
-          command "#{node['nagios']['plugin_dir']}/check_rdiff -r #{sd} -w #{warn} -c #{crit} -l 500 -p 24"
+        nagios_nrpecheck "check_rdiff-backup" do
+          command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l 500 -p 24"
           action :add
         end
       end
@@ -187,7 +196,7 @@ if node.recipes.include?("nagios::client")
     
     # Delete checks for hosts we no longer back up.
     nodestodelete.each do |n|
-      nagios_nrpecheck "check_rdiff" do
+      nagios_nrpecheck "check_rdiff-backup" do
         action :remove
       end
     end
@@ -195,7 +204,7 @@ if node.recipes.include?("nagios::client")
   # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
   else
     nodes.merge(nodestodelete).each do |n|
-      nagios_nrpecheck "check_rdiff_#{n['fqdn']}" do
+      nagios_nrpecheck "check_rdiff-backup" do
         action :remove
       end
     end
