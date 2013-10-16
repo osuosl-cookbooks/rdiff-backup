@@ -187,7 +187,12 @@ if node.recipes.include?("nagios::client")
       #maxtime = node['rdiff-backup']['client']['nagios-maxtime']
       
       # Create the check.
-        nagios_nrpecheck "check_rdiff-backup" do
+        nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
+          command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c check-rdiff-backup"
+          host_name node['fqdn']
+          action :add
+        end
+        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
           command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l 500 -p 24"
           action :add
         end
@@ -196,16 +201,20 @@ if node.recipes.include?("nagios::client")
     
     # Delete checks for hosts we no longer back up.
     nodestodelete.each do |n|
-      nagios_nrpecheck "check_rdiff-backup" do
-        action :remove
+      n['rdiff-backup']['client']['source-dirs'].each do |sd|
+        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
+          action :remove
+        end
       end
     end
 
   # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
   else
     nodes.merge(nodestodelete).each do |n|
-      nagios_nrpecheck "check_rdiff-backup" do
-        action :remove
+      n['rdiff-backup']['client']['source-dirs'].each do |sd|
+        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
+          action :remove
+        end
       end
     end
   end
