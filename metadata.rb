@@ -1,5 +1,5 @@
 name             'rdiff-backup'
-maintainer       'OSU Open Source Lab'
+maintainer       'Oregon State University'
 maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures rdiff-backup'
