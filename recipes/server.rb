@@ -198,21 +198,22 @@ if node.recipes.include?("nagios::client")
       # For each directory to be backed up...
       n['rdiff-backup']['client']['source-dirs'].each do |sd|
 
-      # Shorten the variables to make the check command more readable.
-      dd = "#{node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
-      warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
-      crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
-      #maxchange = node['rdiff-backup']['client']['nagios-maxchange']
-      #maxtime = node['rdiff-backup']['client']['nagios-maxtime']
-      
-      # Create the check.
+        # Shorten the variables to make the check command more readable.
+        dd = "#{node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
+        warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
+        crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
+        nrpecheck = "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}"
+        maxchange = node['rdiff-backup']['client']['nagios-maxchange'] || 500
+        maxtime = node['rdiff-backup']['client']['nagios-maxtime'] || 24
+        
+        # Create the check.
         nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
-          command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c check-rdiff-backup"
+          command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheck}"
           host_name node['fqdn']
           action :add
         end
-        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
-          command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l 500 -p 24"
+        nagios_nrpecheck nrpecheck do
+          command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l #{maxchange} -p #{maxtime}"
           action :add
         end
       end
