@@ -206,7 +206,7 @@ if node.recipes.include?("nagios::client")
       n['rdiff-backup']['client']['source-dirs'].each do |sd|
 
         # Shorten the variables to make the check command more readable.
-        dd = "#{node['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
+        dd = "#{n['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
         warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
         crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
         nrpecheck = "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}"
