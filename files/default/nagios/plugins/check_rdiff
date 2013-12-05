@@ -61,6 +61,7 @@ my $pid_1;
 my $pid_2;
 my $size_now;
 my $size_change;
+my $increment_file_size;
 my $script;
 my $err = 0;
 #r=repository
@@ -174,12 +175,19 @@ if($no_mir == 1)
 		exit(2);			
 	}
 	
-	<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;
+	<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;
+	($increment_file_size) = <FILE> =~ /IncrementFileSize (.*) \(.*\)$/;
 	($size_change) = <FILE> =~ /TotalDestinationSizeChange (.*) \(.*\)$/;
+	if($increment_file_size == 0)
+	{
+		$size_change /= 1048576;
+		printf("OK: First backup has run with size %d MB\n", $size_change);
+		exit(0);
+	}
 	if($size_change >= $l_thresh)
 	{
 		$size_change /= 1048576;
-		printf("WARNING: Transferred more than threshold(%dMB)\n", $size_change);
+		printf("WARNING: Transferred more than threshold(%d MB)\n", $size_change);
 		exit(1);
 	}
 	$elapsed = localtime(stat($stats_fn)->mtime);
