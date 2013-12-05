@@ -210,8 +210,8 @@ if node.recipes.include?("nagios::client")
         warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
         crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
         nrpecheck = "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}"
-        maxchange = node['rdiff-backup']['client']['nagios-maxchange'] || 500
-        maxtime = node['rdiff-backup']['client']['nagios-maxtime'] || 24
+        maxchange = n['rdiff-backup']['client']['nagios-maxchange'] || 500
+        maxtime = n['rdiff-backup']['client']['nagios-maxtime'] || 24
         
         # Create the check.
         nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do

@@ -39,6 +39,8 @@ Attributes
 * `node['rdiff-backup']['client']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `node['rdiff-backup']['client']['additional-args']` - Additional arguments to pass to rdiff-backup, default empty
 * `node['rdiff-backup']['client']['user']` - User to run backups with on the client side, default "rdiff-backup-client"
+* `node['rdiff-backup']['client']['nagios-maxchange']` - The maximum number of megabytes the backup repos can change by from one backup before alerting, default 500
+* `node['rdiff-backup']['client']['nagios-maxtime']` - The maximum number of hours behind schedule the backups can be before alerting, default 24
 
 Usage
 -----
