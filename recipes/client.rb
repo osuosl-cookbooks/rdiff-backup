@@ -40,7 +40,9 @@ end
 # As long as the pubkey databag exists for the user...
 if data_bag("users").include?(node['rdiff-backup']['client']['user'])
   # Copy over the user's ssh pubkey.
-  node.set['users'] = [node['rdiff-backup']['client']['user']].concat(node['users'])
+  if not node['users'].include?(node['rdiff-backup']['client']['user'])
+    node.set['users'] = [node['rdiff-backup']['client']['user']].concat(node['users'])
+  end
   include_recipe "user::data_bag"
 end
 
