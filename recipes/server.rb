@@ -41,7 +41,7 @@ end
 
 # Search for nodes to back up.
 Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
-rawnodes = search(:node, 'run_list:recipe\[rdiff-backup\:\:client\]')
+rawnodes = search(:node, 'recipes:rdiff-backup\:\:client')
 
 # Convert the nodes to hashes for easy management.
 nodes = Set.new
