@@ -122,7 +122,6 @@ else
       # Shorten the variables here to make the giant rdiff-backup command more readable.
       fqdn = n['fqdn']
       port = n['rdiff-backup']['client']['ssh-port']
-      src = n['rdiff-backup']['client']['source-dirs']
       dest = n['rdiff-backup']['client']['destination-dir']
       period = n['rdiff-backup']['client']['retention-period']
       args = n['rdiff-backup']['client']['additional-args']
