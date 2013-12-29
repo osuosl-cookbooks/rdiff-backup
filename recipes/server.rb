@@ -115,7 +115,7 @@ else
 
       # Format the list of paths to back up.
       pathlist = String.new
-      n['rdiff-backup']['client']['source-dirs'].each do |path|
+      n['rdiff-backup']['client']['source-dirs'].reject{ |dir| dir == "" }.each do |path| # Don't let blank lines be source dirs.
         pathlist += " \"" + path + "\""
       end
 
