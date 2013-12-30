@@ -180,7 +180,7 @@ if($no_mir == 1)
 		printf("WARNING: Transferred more than threshold(%d MB)\n", $size_change);
 		exit(1);
 	}
-	printf("OK: Last backup finished %s. Size change %d MB\n", $elapsed, $size_change / 1048576);
+	printf("OK: Last backup finished %s. Change: %d MB. Total: %d MB\n", $elapsed, $size_change / 1048576, $size_now / 1048576);
 	exit(0);
 }
 
