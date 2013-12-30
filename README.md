@@ -17,8 +17,8 @@ Features
 
 * Can back up clients managed by Chef
 * Can back up clients not managed by Chef
+* Can send Nagios alerts when backups fail or do not run
 * [Planned] Can back up MySQL and PostgreSQL databases
-* [Planned] Can send Nagios alerts when backups fail or do not run
 
 Attributes
 ----------
