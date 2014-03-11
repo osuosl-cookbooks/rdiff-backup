@@ -42,24 +42,9 @@ end
 
 # Note: The server backup user's private key must be copied over manually.
 
-
-
-
-# pseudocode
-
-#search for clients and get them from databags
-#take client default attributes and merge them with each backup\'s attributes to get all backups, using cookbook defaults where attributes are not specified
-#get group of backups that already exist by searching for cron jobs
-#get list of backups to remove by doing "exists" - "specified" and then remove their cron jobs and nagios alerts
-#get a list of backups to add by doing "specified" - "exists" and then create their cron jobs and nagios alerts
-
-
-
-
-
 nodes = Set.new
 
-# Get nodes to back up by searching.
+# Find nodes to back up by searching.
 Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
 hosts = search(:node, 'recipes:rdiff-backup\:\:client')
 hosts.each do |host|
@@ -69,10 +54,10 @@ hosts.each do |host|
   newnode = deep_copy(node) # Use the rdiff-backup server's attributes as the defaults.
   deep_merge!(newnode, host) # Override the defaults with the client node's attributes.
 
-  nodes << newnode # Add the new node to the list of nodes.
+  nodes << newnode # Add the new node to the set of nodes.
 end
 
-# Get nodes to back up from the unmanagedhosts databag too.
+# Find nodes to back up from the unmanagedhosts databag too.
 unmanagedhosts = data_bag(UNMANAGED_HOSTS_DATABAG).to_set
 unmanagedhosts.each do |bagitem|
   host = data_bag_item(UNMANAGED_HOSTS_DATABAG, bagitem) # Read a "node" from the databag.
@@ -82,7 +67,7 @@ unmanagedhosts.each do |bagitem|
   deep_merge!(newnode, host) # Override the defaults with the client node's attributes.
   newnode['fqdn'].gsub!('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
 
-  nodes << newnode # Add the new node to the list of nodes.
+  nodes << newnode # Add the new node to the set of nodes.
 end
 
 # Filter out clients not in our environment, if applicable.
@@ -98,189 +83,158 @@ if nodes.empty?
   Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_unmanagedclients databag.")
 end
 
-jobs = Hash.new
+jobs = Set.new
 
 # For each node, create a new job object for each job by merging job-specific attributes over node-specific ones.
 nodes.each do |n|
   n['rdiff-backup']['client']['jobs'].keys.each do |src-dir|
-    if src-dir.start_with?("/") # Only work with absolute paths. Also excludes the default hash.
+    if src-dir.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
       job = n['rdiff-backup']['client']['jobs']['default'] || Hash.new # Start with the client's default attributes if they are specified.
       deep_merge!(job, n['rdiff-backup']['client']['jobs'][src-dir]) # Merge the job-specific attributes over the top.
-      jobs["#{n['fqdn']} #{src-dir}"] = job # Add the job to the hash, with its key being of the form "fqdn dir".
+      job['fqdn'] = n['fqdn'] # Keep the fqdn in the job object.
+      job['source-dir'] = src-dir # Keep the source-dir in the job object.
+      jobs << job # Add the new job to the set of jobs.
     end
   end
 end
 
-existingjobs = Set.new
+# Keep the set of jobs in "bare" format too so we can compare with the "bare" pre-existing jobs.
+specifiedjobs = Set.new
+jobs.each do |job|
+  newjob = Hash.new # Create a new "bare" job with just enough information to identify it.
+  newjob['fqdn'] = job['fqdn']
+  newjob['source-dir'] = job['source-dir']
+  specifiedjobs << newjob # Add the job name of the form "fqdn dir" to the set of existing jobs.
+end
 
-# Get a list of jobs which already exist.
+# Get the set of jobs which already exist so we can decide which ones to remove.
+existingjobs = Set.new
 File.open(CRON_FILE, "r") do |file|
   file.each_line do |line|
     if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
-      existingjobs << "#{line.split[7]} #{line.split[8]}" # Add the job name of the form "fqdn dir" to the list of existing jobs.
+      newjob = Hash.new # Create a new "bare" job with just enough information to identify it.
+      newjob['fqdn'] = line.split[7]
+      newjob['source-dir'] = line.split[8]
+      existingjobs << newjob # Add the job name of the form "fqdn dir" to the set of existing jobs.
     end
   end
 end
 
-jobs.each do |jobname, job|
+# Get the set of jobs that need to be removed by subtracting the set of specified jobs by the set of existing jobs.
+removejobs = existingjobs.dup.subtract(specifiedjobs)
 
-  crontab = "MAILTO=#{}\n# Crontab for rdiff-backup managed by Chef. Changes will be overwritten.\n"
-
-  # Put each job in the cron file.
-
-  
-  # Create the exclusion files for each job.
-
-
-  # If the job didn't already exist, create nagios alerts for it (if they're enabled).
-  if existingjobs.has_key?(jobname)
-    # But what about if nagios attributes get updated? How do we detect it? Maybe we should just always run the lwrps to update them? Or do we need to delete it first?
-  end
-end
-
-# Distribute jobs across a certain time period every day.
-minutesbetweenjobs = ((node['rdiff-backup']['server']['endhour'] - node['rdiff-backup']['server']['starthour'] + 24) % 24 * 60 ) / nodes.size
+# Figure out how much time to wait between starting jobs.
+minutesbetweenjobs = ((node['rdiff-backup']['server']['end-hour'] - node['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60 ) / jobs.size
 hoursbetweenjobs = minutesbetweenjobs / 60
-finishedjobs = 0
-nodes.each do |n|
-  minute = (minutesbetweenjobs * finishedjobs) % 60
-  hour = (hoursbetweenjobs * finishedjobs) % 24 + node['rdiff-backup']['server']['starthour']
 
-  if !n['rdiff-backup']['client']['source-dirs'].empty?
+# Set up each job.
+setjobs = 0
+jobs.each do |job|
 
-    # Format the list of paths to back up.
-    pathlist = String.new
-    n['rdiff-backup']['client']['source-dirs'].reject{ |dir| dir == "" }.each do |path| # Don't let blank lines be source dirs.
-      pathlist += " \"" + path + "\""
-    end
+  # Shorten some long variables for readability.
+  fqdn = job['fqdn']
+  sd = job['source-dir']
+  dd = "#{job['destination-dir']}/filesystem/#{fqdn}#{sd}"
+  suser = node['rdiff-backup']['server']['user']
+  maxchange = job['nagios']['max-change']
+  latestart = job['nagios']['max-late-start']
+  latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
+  latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
+  servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
+  nrpecheckname = "check_rdiff-backup_#{job['fqdn']}_#{sd.gsub("/", "-")}"
 
-    # Shorten the variables here to make the giant rdiff-backup command more readable.
-    fqdn = n['fqdn']
-    port = n['rdiff-backup']['client']['ssh-port']
-    dest = n['rdiff-backup']['client']['destination-dir']
-    period = n['rdiff-backup']['client']['retention-period']
-    args = n['rdiff-backup']['client']['additional-args']
-    user = n['rdiff-backup']['client']['user']
-    destpath = "#{dest}/filesystem/#{fqdn}/${path}"
-    
-    e = n['rdiff-backup']['client']['exclude-dirs']
-    exclude = e ? e.join("\\n") : ""
-
-    # Create the base directory that this node's jobs will go to (enough so that the rdiff-backup server user have write permission).
-    directory dest do
-      owner node['rdiff-backup']['server']['user']
-      group node['rdiff-backup']['server']['user']
-      mode '0775'
-      recursive true
-      action :create
-    end
-
-    # If there are any paths to back up...
-    if pathlist != " \"\""
-      # Create cron job for the node to back them up and then remove old jobs.
-      cron_d "rdiff-backup-#{fqdn}" do
-        action :create
-        minute minute
-        hour hour
-        user node['rdiff-backup']['server']['user']
-        mailto "root@osuosl.org"
-        command "echo #{exclude} | for path in#{pathlist}; do rdiff-backup #{args} --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-globbing-filelist-stdin --remote-schema \"ssh -Cp #{port} -o StrictHostKeyChecking=no \\%s sudo rdiff-backup --server --restrict-read-only /\" \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
-      end
-    else
-      # Delete this node from the array of hosts to keep jobs for, so that its job will be deleted.
-      nodestodelete << n
-    end
+  # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
+  directory dd do
+    owner suser
+    group suser
+    mode '0775'
+    recursive true
+    action :create
   end
 
-  finishedjobs += 1
-end
+  # Set run times for each job, distributing them evenly across a certain time period every day.
+  job['minute'] = (minutesbetweenjobs * setjobs) % 60
+  job['hour'] = ((hoursbetweenjobs * setjobs) + node['rdiff-backup']['server']['start-hour']) % 24
+  setjobs += 1
 
-# Delete all rdiff-backup cron jobs that we didn't just enforce the existence of (useful for when you disable jobs for a host). The reason why we don't just delete all cron jobs at the beginning of the recipe is so that valid cron jobs are always available, so that jobs will run on time regardless of when the chef-client runs.
-nodestodelete.each do |n|
-  nodes.delete(n)
-end
-files = Dir.glob("/etc/cron.d/rdiff-backup-*")
-nodes.each do |n|
-  if files.include?(n['fqdn'])
-    files.delete(n['fqdn'])
+  # Create the exclude files for each job.
+  template "/home/#{suser}/exclude/#{fqdn}-#{sd}" do
+    source "exclude.sh.erb"
+    mode "0774"
+    variables({
+        :fqdn => fqdn,
+        :src => sd,
+        :paths => job['exclude-dirs'],
+      })
+    action :create
+  end
+
+  # Create scripts for each job.
+  template "/home/#{suser}/scripts/#{fqdn}-#{sd}" do
+    source "job.sh.erb"
+    mode "0664"
+    variables({
+        :fqdn => fqdn,
+        :src => sd,
+        :dest => dd,
+        :period => job['retention-period'],
+        :user => job['user'],
+        :port => job['ssh-port'],
+        :args => job['additional-args']
+      })
+    action :create
+  end
+  
+  # If nagios alerts are enabled and the job didn't already exist, create nagios alerts for the job.
+  if node['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts']
+    if existingjobs.include?("#{fqdn} #{sd}")
+
+    # TODO: But what about if nagios attributes get updated? How do we detect it? Maybe we should just always run the lwrps to update them? Or do we need to delete them first? Won't that reset the alert so it has no history?
+
+    nagios_service servicename do
+      command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheckname}"
+      host_name node['fqdn']
+      action :add
+    end
+    nagios_nrpecheck nrpecheckname do
+      command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{latefinwarn} -c #{latefincrit} -l #{maxchange} -p #{latestart}"
+      action :add
+    end
+  else # Remove the nagios alerts if alerts are disabled.
+    nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
+      action :remove
+    end
+    nagios_service "rdiff-backup_#{job['fqdn']}_#{job['source-dir']}" do
+      action :remove
+    end
   end
 end
-files.each do |f|
-  File.delete(f)
+
+# Create the crontab for all the jobs.
+template CRON_FILE do
+  source "cron.d.erb"
+  mode "0664"
+  variables({
+      :fqdn => job['fqdn'],
+      :src => job['source-dir'],
+      :dest => job['destination-dir'],
+      :period => job['retention-period'],
+      :user => job['user'],
+      :port => job['ssh-port'],
+      :args => job['additional-args']
+    })
+  action :create
 end
 
-# Set up Nagios checks for the jobs if the server has the nagios::client recipe and node['rdiff-backup']['server']['nagios-alerts'] = true.
-if node.recipes.include?("nagios::client")
-  if node['rdiff-backup']['server']['nagios-alerts']
-
-    # Copy over the check_rdiff nrpe plugin.
-    cookbook_file "#{node['nagios']['plugin_dir']}/check_rdiff" do
-      source "nagios/plugins/check_rdiff"
-      mode '755'
-      action :create
-    end
-
-    # Give the user sudo access for the nrpe plugin.
-    sudo 'nrpe' do
-      user      'nrpe'
-      runas     'root'
-      nopasswd  true
-      commands  ["#{node['nagios']['plugin_dir']}/check_rdiff"]
-    end
-
-    # For each node...
-    nodes.each do |n|
-      
-      # For each directory to be backed up...
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-
-        if sd != ""
-          # Shorten the variables to make the check command more readable.
-          dd = "#{n['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
-          warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
-          crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
-          nrpecheck = "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}"
-          maxchange = n['rdiff-backup']['client']['nagios-maxchange'] || 500
-          maxtime = n['rdiff-backup']['client']['nagios-maxtime'] || 24
-          
-          # Create the check.
-          nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
-            command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheck}"
-            host_name node['fqdn']
-            action :add
-          end
-          nagios_nrpecheck nrpecheck do
-            command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l #{maxchange} -p #{maxtime}"
-            action :add
-          end
-        end
-      end
-    end
-    
-    # Delete checks for hosts we no longer back up.
-    nodestodelete.each do |n|
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
-          action :remove
-        end
-        nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
-          action :remove
-        end
-      end
-    end
-
-  # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
-  else
-    nodes.merge(nodestodelete).each do |n|
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
-          action :remove
-        end
-        nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
-          action :remove
-        end
-      end
-    end
+# Remove the exclude files, job scripts, and nagios alerts for each job to be removed.
+removejobs.each do |job|
+  File.delete("/home/#{node['rdiff-backup']['server']['user']}/exclude/#{job['fqdn']}-#{job['source-dir']}")
+  File.delete("/home/#{node['rdiff-backup']['server']['user']}/scripts/#{job['fqdn']}-#{job['source-dir']}")
+  nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
+    action :remove
+  end
+  nagios_service "rdiff-backup_#{job['fqdn']}_#{job['source-dir']}" do
+    action :remove
   end
 end
 

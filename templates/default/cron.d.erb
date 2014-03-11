@@ -1,0 +1,9 @@
+# rdiff-backup crontab for <%= @fqdn %>:<%= @src %> managed by Chef. Changes will be overwritten.
+
+<% if @mailto -%>
+MAILTO=<%= @mailto %>
+<% end -%>
+
+<% @jobs.each do |job| -%>
+<%= job['minute'] %> <%= job['hour'] %> * * * <%= job['user'] %> /home/<%= job['user'] %>/<%= job['source-dir'] %>
+<% end -%>

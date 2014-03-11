@@ -1,0 +1,5 @@
+# rdiff-backup exclude file for <%= @fqdn %>:<%= @src %> managed by Chef. Changes will be overwritten.
+
+<% @paths.each do |path| -%>
+- <%= @src %>/<%= path %>
+<% end -%>

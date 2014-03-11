@@ -25,11 +25,12 @@ Attributes
 
 ## Server Attributes:
 
-* `node['rdiff-backup']['server']['starthour']` - Earliest hour of the day to schedule backups, default "13"
-* `node['rdiff-backup']['server']['endhour']` - Latest hour of the day to schedule backups, default "23"
+* `node['rdiff-backup']['server']['start-hour']` - Earliest hour of the day to schedule jobs, default "13"
+* `node['rdiff-backup']['server']['end-hour']` - Latest hour of the day to schedule jobs, default "23"
 * `node['rdiff-backup']['server']['user']` - User to run backups with on the server side, default "rdiff-backup-server"
 * `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
-* `node['rdiff-backup']['server']['nagios-alerts']` - Whether to provide Nagios alerts for status of each backup if the server has the nagios::client recipe, default "true"
+* `node['rdiff-backup']['server']['mailto']` - The email address to mail cron reports to.
+* `node['rdiff-backup']['client']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
 
 ## Client Attributes:
 
@@ -39,8 +40,11 @@ Attributes
 * `node['rdiff-backup']['client']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `node['rdiff-backup']['client']['additional-args']` - Additional arguments to pass to rdiff-backup, default empty
 * `node['rdiff-backup']['client']['user']` - User to run backups with on the client side, default "rdiff-backup-client"
-* `node['rdiff-backup']['client']['nagios-maxchange']` - The maximum number of megabytes the backup repos can change by from one backup before alerting, default 500
-* `node['rdiff-backup']['client']['nagios-maxtime']` - The maximum number of hours behind schedule the backups can be before alerting, default 24
+* `node['rdiff-backup']['client']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
+* `node['rdiff-backup']['client']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 1024
+* `node['rdiff-backup']['client']['nagios']['max-late-start']` - How late (in hours) the job can start before a critical alert is sent, default 2
+* `node['rdiff-backup']['client']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
+* `node['rdiff-backup']['client']['nagios']['max-late-finish-critical']` - How long (in hours) the job can run before a critical alert is sent, default 8
 
 Usage
 -----

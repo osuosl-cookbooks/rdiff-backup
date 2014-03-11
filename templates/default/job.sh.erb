@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# rdiff-backup job script for <%= @fqdn %>:<%= @src %> managed by Chef. Changes will be overwritten.
+
+rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-globbing-filelist '../exclude/<%= @fqdn %>-<%= @src %>' --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>'
+rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>'
