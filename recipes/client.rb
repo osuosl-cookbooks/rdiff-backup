@@ -52,4 +52,5 @@ sudo node['rdiff-backup']['client']['user'] do
   runas     'root'
   nopasswd  true
   commands  ['/usr/bin/rdiff-backup --server --restrict-read-only /']
+  defaults  ['!requiretty']
 end
