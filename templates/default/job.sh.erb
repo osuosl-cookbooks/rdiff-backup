@@ -10,7 +10,7 @@ echo "--------------------- `date` ---------------------"
 if [ ! -e $PIDFILE ] || ! cat $PIDFILE | xargs ps -a | grep basename $0 > /dev/null; then
   echo "rdiff-backup job for <%= @fqdn %>:<%= @src %> is starting"
   echo $$ > $PIDFILE
-  rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-globbing-filelist '../exclude/<%= @fqdn %>_<%= @src.gsub("/", "-") %>' --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>'
+  rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems --exclude-globbing-filelist '../exclude/<%= @fqdn %>_<%= @src.gsub("/", "-") %>' --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>'
   rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>'
   rm $PIDFILE
   echo "rdiff-backup job for <%= @fqdn %>:<%= @src %> is complete"

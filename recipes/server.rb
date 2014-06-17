@@ -46,9 +46,23 @@ def deep_merge!(bot, top)
       bot[key] = top[key]
     end
   end
+  return bot
+end
+
+# Recursive bot.merge(top) for hashes; returns new hash rather than modifying the bottom one.
+def deep_merge(bot, top)
+  deep_merge!(deep_copy(bot), top)
 end
 
 servernode = deep_copy_node(node.to_hash); # This servernode hash that emulates a node definition allows rdiff-backup server attributes to be stored and modified without affecting the actual node definition.
+
+# Removes a job, deleting all files and nagios checks associated with it.
+def remove_job(job, servernode)
+  excludepath = "/home/#{servernode['rdiff-backup']['server']['user']}/exclude/#{job['fqdn']}_#{job['source-dir']}"
+  File.delete(excludepath) if File.exists?(excludepath)
+  scriptpath = "/home/#{servernode['rdiff-backup']['server']['user']}/scripts/#{job['fqdn']}_#{job['source-dir']}"
+  File.delete(scriptpath) if File.exists?(scriptpath)
+end
 
 nodes = Set.new
 
@@ -84,6 +98,8 @@ baghosts.each do |bagitem|
   databagnode = data_bag_item(HOSTS_DATABAG, bagitem) # Read a "node" from the databag.
   databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
   databagnode.delete('id')
+
+  clientnode = Hash.new
   
   # If the host is already being managed in Chef, use its node attributes as the defaults.
   nodes.each do |n|
@@ -93,10 +109,8 @@ baghosts.each do |bagitem|
     end
   end
 
-  # Otherwise, use the rdiff-backup server's attributes as the defaults.
-  clientnode = deep_copy_node(servernode) unless clientnode
-
-  deep_merge!(clientnode, databagnode) # Override the defaults with the databag attributes.
+  deep_merge!(clientnode, databagnode) # Merge the client data bag attributes over the client node attributes.
+  clientnode = deep_merge!(deep_copy_node(servernode), clientnode) # Merge the client attributes over the server attributes to get the final set of client attributes.
 
   nodes << clientnode # Add the new node to the set of nodes.
 end
@@ -108,11 +122,6 @@ if servernode['rdiff-backup']['server']['restrict-to-own-environment']
       nodes.delete(n)
     end
   end
-end
-
-# Filter out ourself, since the server should not also be a client.
-nodes.delete_if do |n|
-  n['fqdn'] == servernode['fqdn']
 end
 
 if nodes.empty?
@@ -159,24 +168,28 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
 
 end
 
-puts "DEBUG: servernode"
-pp(servernode)
-
 # Note: The server backup user's private key must be copied over manually.
 
 jobs = Set.new
 
 # For each node, create a new job object for each job by merging job-specific attributes over node-specific ones.
 nodes.each do |n|
-  if n['rdiff-backup']['client'].empty?
+
+  if n['rdiff-backup']['client']['jobs'].empty?
     Chef::Log.info("WARNING: No jobs specified for host '#{n['fqdn']}'.")
   end
-  n['rdiff-backup']['client'].keys.each do |src|
+  n['rdiff-backup']['client']['jobs'].keys.each do |src|
     if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
-      job = deep_copy(n['rdiff-backup']['client']['default']) || Hash.new # Start with the client's default attributes if they are specified.
-      deep_merge!(job, n['rdiff-backup']['client'][src]) # Merge the job-specific attributes over the top.
-      job['fqdn'] = n['fqdn'] # Keep the fqdn in the job object.
-      job['source-dir'] = src # Keep the source-dir in the job object.
+      job = deep_copy(n['rdiff-backup']['server']['jobs']['default']) || Hash.new # Start with the server's default attributes.
+      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || Hash.new) # Merge the client's default attributes over the top.
+      deep_merge!(job, n['rdiff-backup']['server']['jobs'][src] || Hash.new) # Merge the server's node-specific attributes over the top.
+      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || Hash.new) # Merge the job-specific attributes over the top.
+
+      # Keep higher-level attributes in the job object for convenience.
+      job['source-dir'] = src
+      job['fqdn'] = n['fqdn']
+      job['user'] = n['rdiff-backup']['client']['user']
+      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
 
       # Remove exclusion rules that don't apply to this job
       relevantdirs = Array.new
@@ -199,9 +212,6 @@ jobs.each do |job|
   specifiedjobs << newjob
 end
 
-puts "DEBUG: specifiedjobs"
-pp(specifiedjobs)
-
 # Get the set of jobs which already exist so we can decide which ones to remove.
 existingjobs = Set.new
 if File.exists?(CRON_FILE)
@@ -217,9 +227,6 @@ if File.exists?(CRON_FILE)
   end
 end
 
-puts "DEBUG: existingjobs"
-pp(existingjobs)
-
 # Get the set of jobs that need to be removed by subtracting the set of specified jobs by the set of existing jobs.
 removejobs = existingjobs.dup.subtract(specifiedjobs)
 
@@ -228,12 +235,11 @@ unless jobs.empty?
   minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60 ) / jobs.size
 end
 
+services = []
+
 # Set up each job.
 setjobs = 0
 jobs.each do |job|
-
-  puts "DEBUG: job"
-  pp(job)
 
   # Shorten some long variables for readability.
   fqdn = job['fqdn']
@@ -307,29 +313,26 @@ jobs.each do |job|
   # If nagios alerts are enabled and the job didn't already exist, create nagios alerts for the job.
   if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and not existingjobs.include?("#{fqdn} #{sd}")
 
-    # TODO: But what about if nagios attributes get updated? How do we detect it? Maybe we should just always run the lwrps to update them? Or do we need to delete them first? Won't that reset the alert so it has no history?
-
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
 
-    nagios_service servicename do
-      command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheckname}"
-      host_name servernode['fqdn']
-      action :add
-    end
+    newservice = {
+      'id' => servicename,
+      'command_line' => "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheckname}",
+      'host_name' => servernode['fqdn']
+    }
+    services << newservice
+
     nagios_nrpecheck nrpecheckname do
       command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff -r #{dd} -w #{latefinwarn} -c #{latefincrit} -l #{maxchange} -p #{latestart}"
       action :add
     end
-  else # Remove the nagios alerts if alerts are disabled.
-    nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
-      action :remove
-    end
-    nagios_service "rdiff-backup_#{job['fqdn']}_#{job['source-dir']}" do
-      action :remove
-    end
+
   end
 end
+
+# Set up Nagios remote attributes.
+node.set['nagios']['remote_services'] = services
 
 # Create the crontab for all the jobs.
 template CRON_FILE do
@@ -345,17 +348,7 @@ template CRON_FILE do
   action :create
 end
 
-puts "DEBUG: removejobs"
-pp(removejobs)
-
-# Remove the exclude files, job scripts, and nagios alerts for each job to be removed.
+# Remove all jobs that need to be removed.
 removejobs.each do |job|
-  File.delete("/home/#{servernode['rdiff-backup']['server']['user']}/exclude/#{job['fqdn']}_#{job['source-dir']}")
-  File.delete("/home/#{servernode['rdiff-backup']['server']['user']}/scripts/#{job['fqdn']}_#{job['source-dir']}")
-  nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
-    action :remove
-  end
-  nagios_service "rdiff-backup_#{job['fqdn']}_#{job['source-dir']}" do
-    action :remove
-  end
+  remove_job(job, servernode)
 end

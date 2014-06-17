@@ -17,12 +17,21 @@
 # limitations under the License.
 #
 
+HOSTS_DATABAG = 'rdiff-backup_hosts'
+
 # Install rdiff-backup.
 package "rdiff-backup" do
   action :install
 end
 
-user = node['rdiff-backup']['client']['default']['user']
+# Use the user from the host's databag if it exists and is specified, otherwise use the one from the node definition.
+databag = data_bag(HOSTS_DATABAG)
+fqdn = node['fqdn'].gsub('.', '_')
+if databag.include?(fqdn)
+  user = databag[fqdn]['rdiff-backup']['client']['user']
+else
+  user = node['rdiff-backup']['client']['user']
+end
 
 # Create the server backup group.
 group user do

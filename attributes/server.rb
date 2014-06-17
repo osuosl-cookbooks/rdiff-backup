@@ -6,6 +6,7 @@ node.default['rdiff-backup']['server']['restrict-to-own-environment'] = true
 node.default['rdiff-backup']['server']['mailto'] = ""
 node.default['rdiff-backup']['server']['nagios']['alerts'] = true
 node.default['rdiff-backup']['server']['nagios']['plugin-dir'] = "/usr/lib64/nagios/plugins"
+node.default['rdiff-backup']['server']['jobs'] = {}
 
 # This is required for sudo access to work and should not be changed/overridden.
 node.default['authorization']['sudo']['include_sudoers_d'] = true
