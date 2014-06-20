@@ -121,8 +121,7 @@ if(defined $script)
 	}
 }
 
-$s_thresh = $opts{s} * 1048576 if(defined($opts{s}));
-$s_thresh = 1048576 if(!defined($opts{s}));
+$s_thresh = 4096;
 
 @mir_list = <$repository/current_mirror*>;
 $no_mir = scalar @mir_list;
@@ -171,8 +170,7 @@ if($no_mir == 1)
 	
 	if($size_now <= $s_thresh)
 	{
-		$s_thresh /= 1048576;
-		print "CRITICAL: Source repository size dropped under $s_thresh megabyte(s)\n";
+		print "CRITICAL: Source repository size dropped under $s_thresh byte(s)\n";
 		exit(2);			
 	}
 
