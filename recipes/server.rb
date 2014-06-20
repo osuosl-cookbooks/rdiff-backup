@@ -219,15 +219,6 @@ if node.recipes.include?("nagios::client")
         end
       end
     end
-    
-    # Delete checks for hosts we no longer back up.
-    nodestodelete.each do |n|
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
-          action :remove
-        end
-      end
-    end
 
   # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
   else
