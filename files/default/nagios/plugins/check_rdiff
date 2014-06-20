@@ -47,7 +47,6 @@ my $repository;
 my %opts=();
 my $w_thresh;
 my $c_thresh;
-my $s_thresh;
 my $t_thresh;
 my $l_thresh;
 my $cron_cycle;
@@ -121,8 +120,6 @@ if(defined $script)
 	}
 }
 
-$s_thresh = 4096;
-
 @mir_list = <$repository/current_mirror*>;
 $no_mir = scalar @mir_list;
 
@@ -168,12 +165,6 @@ if($no_mir == 1)
 	$size_now = <FILE>;
 	($size_now) = $size_now =~ /SourceFileSize (.*) \(.*\)$/;
 	
-	if($size_now <= $s_thresh)
-	{
-		print "CRITICAL: Source repository size dropped under $s_thresh byte(s)\n";
-		exit(2);			
-	}
-
 	<FILE>;<FILE>;<FILE>;<FILE>;
 	($new_file_size) = $new_file_size =~ /NewFileSize (.*) \(.*\)$/;
 	
