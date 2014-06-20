@@ -337,7 +337,7 @@ node.set['nagios']['remote_services'] = services
 # Create the crontab for all the jobs.
 template CRON_FILE do
   source "cron.d.erb"
-  mode "0664"
+  mode "0644"
   variables({
     :shour => servernode['rdiff-backup']['server']['start-hour'],
     :ehour => servernode['rdiff-backup']['server']['end-hour'],
