@@ -19,6 +19,7 @@
 
 HOSTS_DATABAG = 'rdiff-backup_hosts'
 CRON_FILE = '/etc/cron.d/rdiff-backup'
+LOG_DIR = '/var/log/rdiff-backup'
 
 # Recursive copy for objects like nested Hashes.
 def deep_copy(object)
@@ -128,9 +129,12 @@ if nodes.empty?
   Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_hosts databag.")
 end
 
-# Install rdiff-backup.
-package "rdiff-backup" do
-  action :install
+# Install required packages.
+packages = %w[ rdiff-backup cronolog ]
+packages.each do |p|
+  package p do
+      action :install
+  end
 end
 
 # Create the server backup group.
@@ -345,6 +349,25 @@ template CRON_FILE do
     :suser => servernode['rdiff-backup']['server']['user'],
     :jobs => jobs
   })
+  action :create
+end
+
+# Create the log directory.
+directory LOG_DIR do
+  owner servernode['rdiff-backup']['server']['user']
+  group servernode['rdiff-backup']['server']['user']
+  mode '0775'
+  recursive true
+  action :create
+end
+
+# Create a symlink to the log directory from the home directory.
+link "/home/#{servernode['rdiff-backup']['server']['user']}/logs" do
+  owner servernode['rdiff-backup']['server']['user']
+  group servernode['rdiff-backup']['server']['user']
+  mode '0775'
+  link_type :symbolic
+  to LOG_DIR
   action :create
 end
 

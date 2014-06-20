@@ -2,19 +2,35 @@
 
 # rdiff-backup job script for <%= @fqdn %>:<%= @src %> managed by Chef. Changes will be overwritten.
 
-PIDFILE=".`basename $0`.lock"
+# This script is normally run by cron, but can be run manually as the rdiff-backup-server user to start a new backup if one is not already running.
 
-echo "--------------------- `date` ---------------------"
+PIDFILE=".`basename $0`.lock"
+DIR=`dirname ${BASH_SOURCE[0]}`
+JOB=`basename ${0%%".sh"}`
+
+# Prepends date to every line of stdin, then writes to both stdout and the log file.
+function log() {
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(cronolog "/var/log/rdiff-backup/${JOB}/%Y-%m.log")
+}
 
 # Only run if the pidfile doesn't exist (or exists, but contains a pid that isn't running)
 if [ ! -e $PIDFILE ] || ! cat $PIDFILE | xargs ps -a | grep basename $0 > /dev/null; then
-  echo "rdiff-backup job for <%= @fqdn %>:<%= @src %> is starting"
   echo $$ > $PIDFILE
-  rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems --exclude-globbing-filelist '../exclude/<%= @fqdn %>_<%= @src.gsub("/", "-") %>' --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>'
-  rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>'
-  rm $PIDFILE
-  echo "rdiff-backup job for <%= @fqdn %>:<%= @src %> is complete"
-else
-  echo "rdiff-backup job for <%= @fqdn %>:<%= @src %> is already running; terminating"
-fi
 
+  echo '----------------------------------------' | log
+
+  echo 'Starting backup...' | log
+  rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files \
+    --exclude-fifos --exclude-sockets --exclude-other-filesystems \
+    --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
+    --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>' 2>&1 | log
+  echo 'Backup complete.' | log
+
+  echo 'Purging backups older than <%= @dest %>...' | log
+  rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
+  echo 'Job complete.' | log
+
+  rm $PIDFILE
+else
+  echo 'Backup already running; terminating.'
+fi
