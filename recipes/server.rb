@@ -314,8 +314,8 @@ jobs.each do |job|
     action :create
   end
   
-  # If nagios alerts are enabled and the job didn't already exist, create nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and not existingjobs.include?("#{fqdn} #{sd}")
+  # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
+  if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and File.exists?("#{dd}/rdiff-backup-data")
 
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
