@@ -57,7 +57,7 @@ end
 
 servernode = deep_copy_node(node.to_hash); # This servernode hash that emulates a node definition allows rdiff-backup server attributes to be stored and modified without affecting the actual node definition.
 
-# Removes a job, deleting all files and nagios checks associated with it.
+# Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
   excludepath = "/home/#{servernode['rdiff-backup']['server']['user']}/exclude/#{job['fqdn']}_#{job['source-dir']}"
   File.delete(excludepath) if File.exists?(excludepath)
