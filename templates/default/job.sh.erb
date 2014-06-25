@@ -10,7 +10,7 @@ JOB=`basename ${0%%".sh"}`
 
 # Prepends date to every line of stdin, then writes to both stdout and the log file.
 function log() {
-  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(cronolog "/var/log/rdiff-backup/${JOB}/%Y-%m.log")
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "/var/log/rdiff-backup/${JOB}/%Y-%m.log")
 }
 
 # Only run if the pidfile doesn't exist (or exists, but contains a pid that isn't running)
@@ -32,5 +32,5 @@ if [ ! -e $PIDFILE ] || ! cat $PIDFILE | xargs ps -a | grep basename $0 > /dev/n
 
   rm $PIDFILE
 else
-  echo 'Backup already running; terminating.'
+  echo 'Backup already running; terminating.' | log
 fi
