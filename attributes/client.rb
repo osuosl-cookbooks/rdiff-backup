@@ -7,7 +7,7 @@ node.default['rdiff-backup']['client']['jobs']['default']['retention-period'] = 
 node.default['rdiff-backup']['client']['jobs']['default']['additional-args'] = ""
 node.default['rdiff-backup']['client']['jobs']['default']['nagios']['alerts'] = true
 node.default['rdiff-backup']['client']['jobs']['default']['nagios']['max-change'] = 1024
-node.default['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-start'] = 2
+node.default['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-start'] = 24
 node.default['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-finish-warning'] = 4
 node.default['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-finish-critical'] = 8
 
