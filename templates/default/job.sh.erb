@@ -7,10 +7,16 @@
 PIDFILE=".`basename $0`.lock"
 DIR=`dirname ${BASH_SOURCE[0]}`
 JOB=`basename ${0%%".sh"}`
+LOGPATH='/var/log/rdiff-backup'
 
 # Prepends date to every line of stdin, then writes to both stdout and the log file.
 function log() {
-  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "/var/log/rdiff-backup/${JOB}/%Y-%m.log")
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log")
+}
+
+# Prepends date to every line of stdin, then writes to stdout and both the individual and general log files.
+function logboth() {
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log" -P "${LOGPATH}/previous.log")
 }
 
 # Only run if the pidfile doesn't exist (or exists, but contains a pid that isn't running)
@@ -19,18 +25,27 @@ if [ ! -e $PIDFILE ] || ! cat $PIDFILE | xargs ps -a | grep basename $0 > /dev/n
 
   echo '----------------------------------------' | log
 
-  echo 'Starting backup...' | log
+  echo 'Backup starting for "<%= @fqdn %>:<%= @src %>"...' | logboth
   rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files \
     --exclude-fifos --exclude-sockets --exclude-other-filesystems \
     --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
     --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @user %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>' 2>&1 | log
-  echo 'Backup complete.' | log
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo 'Backup complete for "<%= @fqdn %>:<%= @src %>".' | logboth
+  else
+    echo 'Backup failed for "<%= @fqdn %>:<%= @src %>".' | logboth
+  fi
 
-  echo 'Purging backups older than <%= @dest %>...' | log
+  echo 'Purging backups older than <%= @period %> for "<%= @fqdn %>:<%= @src %>"...' | logboth
   rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
-  echo 'Job complete.' | log
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo 'Purge complete for "<%= @fqdn %>:<%= @src %>".' | logboth
+  else
+    echo 'Purge failed for "<%= @fqdn %>:<%= @src %>".' | logboth
+  fi
 
   rm $PIDFILE
+
 else
-  echo 'Backup already running; terminating.' | log
+  echo 'Job already running for "<%= @fqdn %>:<%= @src %>"; terminating.' | logboth
 fi
