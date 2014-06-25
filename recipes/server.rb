@@ -307,7 +307,8 @@ jobs.each do |job|
       :src => sd,
       :dest => dd,
       :period => job['retention-period'],
-      :user => job['user'],
+      :suser => suser,
+      :cuser => job['user'],
       :port => job['ssh-port'],
       :args => job['additional-args']
     })
