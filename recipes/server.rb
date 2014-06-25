@@ -174,7 +174,7 @@ end
 
 # Note: The server backup user's private key must be copied over manually.
 
-jobs = Set.new
+jobs = []
 
 # For each node, create a new job object for each job by merging job-specific attributes over node-specific ones.
 nodes.each do |n|
@@ -233,6 +233,9 @@ end
 
 # Get the set of jobs that need to be removed by subtracting the set of specified jobs by the set of existing jobs.
 removejobs = existingjobs.dup.subtract(specifiedjobs)
+
+# Sort jobs by name to provide stable ordering
+jobs.sort! {|a,b| a['fqdn']+a['source-dir'] <=> b['fqdn']+b['source-dir'] }
 
 # Figure out how much time to wait between starting jobs.
 unless jobs.empty?
