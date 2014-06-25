@@ -1,7 +1,7 @@
 rdiff-backup Cookbook
 =====================
 
-Backs up clients to servers using rdiff-backup.
+Backs up hosts using rdiff-backup.
 
 Requirements
 ------------
@@ -9,7 +9,7 @@ Requirements
 ## Cookbooks:
 
 * chef-user
-* sudo (unless using root as rdiff-backup-client)
+* sudo (unless running backups as root)
 * nagios (for nagios alerts regarding backup statuses)
 
 Features
@@ -17,8 +17,21 @@ Features
 
 * Can back up clients managed by Chef
 * Can back up clients not managed by Chef
-* Can send Nagios alerts when backups fail or do not run
+* Can send Nagios alerts if backups fail, start late, run too long, grow too quickly, or become corrupted
 * [Planned] Can back up MySQL and PostgreSQL databases
+
+Usage
+-----
+
+Jobs can be specified through node definitions, roles, cookbooks, and/or databags for both the rdiff-backup server and each rdiff-backup client.  Jobs run within a certain time period once every night.  One rdiff-backup server may find and back up all hosts on the same chef server (or just within the same environment) via Chef search, and is capable of backing up non-chef hosts as well, as long as a databag is created for it.  When Chef runs on the rdiff-backup server, jobs are created for each directory on each host to be backed up.  Each job has an entry added to the crontab (at `/etc/cron.d/rdiff-backup`) and a backup script added to `/home/rdiff-backup-server/scripts`.  These simple bash scripts are generally run by cron, but may be run manually at any time to start a job if it is not already running.  A job will back up the source directory on the given host to `/data/rdiff-backup` (or other specified directory) on the rdiff-backup server.  Additional log files are generated at `/var/log/rdiff-backup`, and include both a general log for all backups as well as more verbose logs for each individual job.
+
+The rdiff-backup server may also act as a client and back up its own local directories.  This is useful for backing up locally-mounted network filesystems.  Backing up the rdiff-backup data directory is not recommended.
+
+It is worth noting that rdiff-backup is run with `--exclude-other-filesystems` by default, which means that subdirectories on different volumes/filesystems will not be backed up.  For example, if /var and /var/www are on different filesystems, both must be specified as backup dirs explicitly to back both of them up, as rdiff-backup will not recurse into /var/www from within the /var backup.
+
+## Nagios
+
+If Nagios alerts are enabled, checks will be added for new backups after they run for the first time, after which they will alert if the backups fail, start late, run too long, grow too quickly, or become corrupted.
 
 Attributes
 ----------
@@ -34,7 +47,7 @@ Attributes
 * `node['rdiff-backup']['server']['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
 * `node['rdiff-backup']['server']['jobs']` - A map of job attributes to apply to all jobs on this server, default empty
 
-* `node['rdiff-backup']['server']['jobs']['default']['destination-dir']` - Example of how to set the default destination-dir for the all jobs on this server
+* `node['rdiff-backup']['server']['jobs']['default']['retention-period'] = '3M'` - Example of how to set the default retention-period for the all jobs on the server
 
 ## Client Attributes:
 
@@ -52,10 +65,9 @@ Attributes
 * `node['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
 * `node['rdiff-backup']['client']['jobs']['default']['nagios']['max-late-finish-critical']` - How long (in hours) the job can run before a critical alert is sent, default 8
 
-* `node['rdiff-backup']['client']['jobs']['\etc']['destination-dir']` - Example of how to set the destination-dir for the `/etc` job on this client
+* `node['rdiff-backup']['client']['jobs']['/etc']['retention-period'] = '2W'` - Example of how to set the retention-period for the `/etc` job on a client
 
-Usage
------
+## Attribute Precedence:
 
 Attributes for jobs are applied in the following order, with later attributes overriding earlier ones:
 
@@ -73,9 +85,10 @@ Attributes for jobs are applied in the following order, with later attributes ov
 
 In general, it may be easier to remember that databags override other attributes, clients override the server, and job-specific attributes override defaults.  It is also possible to simply ignore most of the order and set up backups entirely through one level, such as entirely through roles or entirely through databags.
 
-It is worth noting that rdiff-backup is run with `--exclude-other-filesystems` by default, which means that subdirectories on different volumes/filesystems will not be backed up.  For example, if /var and /var/www are on different filesystems, both must be specified as backup dirs explicitly to back both of them up, as rdiff-backup will not recurse into /var/www from within the /var backup.
+Setup
+-----
 
-To set up this cookbook, generate an ssh keypair and create a myclientbackupusername.json in the "user" databag for the rdiff-backup client user containing the pubkey and its user id.
+To set up an rdiff-backup server, first generate an ssh keypair (such as with `ssh-keygen`) and create a myclientbackupusername.json in the "user" databag for the rdiff-backup client user containing the pubkey and its user id.
 
 Example `data_bags/users/rdiff-backup-client.json`:
 
