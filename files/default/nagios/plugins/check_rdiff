@@ -165,7 +165,8 @@ if($no_mir == 1)
 	$size_now = <FILE>;
 	($size_now) = $size_now =~ /SourceFileSize (.*) \(.*\)$/;
 	
-	<FILE>;<FILE>;<FILE>;<FILE>;
+	<FILE>;<FILE>;<FILE>;
+  $new_file_size = <FILE>;
 	($new_file_size) = $new_file_size =~ /NewFileSize (.*) \(.*\)$/;
 	
   <FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;
