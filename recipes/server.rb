@@ -21,6 +21,27 @@ HOSTS_DATABAG = 'rdiff-backup_hosts'
 CRON_FILE = '/etc/cron.d/rdiff-backup'
 LOG_DIR = '/var/log/rdiff-backup'
 
+# Default attributes.
+node.default['rdiff-backup']['server']['start-hour'] = 5 # (9pm PST)
+node.default['rdiff-backup']['server']['end-hour'] = 13 # (5am PST)
+node.default['rdiff-backup']['server']['user'] = "rdiff-backup-server"
+node.default['rdiff-backup']['server']['restrict-to-own-environment'] = true
+node.default['rdiff-backup']['server']['mailto'] = ""
+node.default['rdiff-backup']['server']['nagios']['alerts'] = true
+node.default['rdiff-backup']['server']['nagios']['plugin-dir'] = "/usr/lib64/nagios/plugins"
+node.default['rdiff-backup']['server']['jobs']['default']['destination-dir'] = "/data/rdiff-backup"
+node.default['rdiff-backup']['server']['jobs']['default']['exclude-dirs'] = []
+node.default['rdiff-backup']['server']['jobs']['default']['retention-period'] = "3M"
+node.default['rdiff-backup']['server']['jobs']['default']['additional-args'] = ""
+node.default['rdiff-backup']['server']['jobs']['default']['nagios']['alerts'] = true
+node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-change'] = 8192
+node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-start'] = 24
+node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-finish-warning'] = 4
+node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-finish-critical'] = 8
+
+# This is required for sudo access to work and should not be changed/overridden.
+node.set['authorization']['sudo']['include_sudoers_d'] = true
+
 # Recursive copy for objects like nested Hashes.
 def deep_copy(object)
   Marshal.load(Marshal.dump(object))
@@ -55,7 +76,12 @@ def deep_merge(bot, top)
   deep_merge!(deep_copy(bot), top)
 end
 
-servernode = deep_copy_node(node.to_hash); # This servernode hash that emulates a node definition allows rdiff-backup server attributes to be stored and modified without affecting the actual node definition.
+# Attribute hashes. These store the various levels of attributes so they can be merged together properly once we have determined all of them. See the README for explanation of attribute precedence.
+# 'node' covers level 1 (cookbook default attributes) and level 2 (server node attributes).
+servernode = deep_copy_node(node.to_hash) # Covers level 3 (server databag attributes) once the contents of the server databag item are merged over it (if it exists).
+clientsearchnodes = {} # Covers level 4 (client node attributes) once it is filled with client nodes from chef search, keyed by fqdn.
+clientdatabagnodes = {} # Covers level 5 (client databag attributes) once it is filled with client nodes from the databag, keyed by fqdn.
+clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
 
 # Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
@@ -65,68 +91,50 @@ def remove_job(job, servernode)
   File.delete(scriptpath) if File.exists?(scriptpath)
 end
 
-nodes = Set.new
-
 # Find nodes to back up by searching.
 Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
-searchhosts = search(:node, 'recipes:rdiff-backup\:\:client')
-searchhosts.each do |host|
-  hosthash = deep_copy_node(host.to_hash) # Convert the node to a deep hash for easy management.
-
-  # Create a new "node" hash for each host.
-  newnode = deep_copy_node(servernode) # Use the rdiff-backup server's attributes as the defaults.
-  deep_merge!(newnode, hosthash) # Override the defaults with the client node's attributes.
-
-  nodes << newnode # Add the new node to the set of nodes.
+searchnodes = search(:node, 'recipes:rdiff-backup\:\:client')
+searchnodes.each do |n|
+  searchnode = deep_copy_node(n.to_hash)
+  clientsearchnodes[searchnode['fqdn']] = searchnode
 end
 
 # Find nodes to back up from the hosts databag too.
-baghosts = data_bag(HOSTS_DATABAG).to_set
-
-# First pass to get the rdiff-backup server's databag first so we can use it for defaults if it exists.
-baghosts.each do |bagitem|
-  databagnode = data_bag_item(HOSTS_DATABAG, bagitem) # Read a "node" from the databag.
-  databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
-  databagnode.delete('id')
-  if servernode['fqdn'] == databagnode['fqdn']
-    deep_merge!(servernode, databagnode) # Override the server's current attributes with attributes from its databag.
-    break
-  end
-end
-
-# Second pass for all the other hosts.
-baghosts.each do |bagitem|
-  databagnode = data_bag_item(HOSTS_DATABAG, bagitem) # Read a "node" from the databag.
+databaghosts = data_bag(HOSTS_DATABAG).to_set
+databaghosts.each do |databagitem|
+  databagnode = deep_copy(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
   databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
   databagnode.delete('id')
 
-  clientnode = Hash.new
-  
-  # If the host is already being managed in Chef, use its node attributes as the defaults.
-  nodes.each do |n|
-    if databagnode['fqdn'] == n['fqdn']
-      clientnode = n
-      break
-    end
+  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['server'] and servernode['fqdn'] == databagnode['fqdn']
+    deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
   end
-
-  deep_merge!(clientnode, databagnode) # Merge the client data bag attributes over the client node attributes.
-  clientnode = deep_merge!(deep_copy_node(servernode), clientnode) # Merge the client attributes over the server attributes to get the final set of client attributes.
-
-  nodes << clientnode # Add the new node to the set of nodes.
+  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['client']
+    clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
+  end
 end
+
+# Merge clientdatabagnodes over clientsearchnodes.
+clientdatabagnodes.each do |dfqdn, dnode|
+  if clientsearchnodes[dfqdn]
+    deep_merge!(clientsearchnodes[dfqdn], dnode)
+  else
+    clientsearchnodes[dfqdn] = dnode
+  end
+end
+clientnodes = clientsearchnodes.values
 
 # Filter out clients not in our environment, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
-  nodes.each do |n|
+  deep_copy(clientnodes).each do |n|
     if n['chef_environment'] != servernode['chef_environment']
-      nodes.delete(n)
+      clientnodes.delete(n)
     end
   end
 end
 
-if nodes.empty?
-  Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_hosts databag.")
+if clientnodes.empty?
+  Chef::Log.info("WARNING: No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
 end
 
 # Install required packages.
@@ -176,18 +184,23 @@ end
 
 jobs = []
 
-# For each node, create a new job object for each job by merging job-specific attributes over node-specific ones.
-nodes.each do |n|
+# For each node, create a new job object for each job by merging attributes.
+clientnodes.each do |n|
 
   if n['rdiff-backup']['client']['jobs'].empty?
     Chef::Log.info("WARNING: No jobs specified for host '#{n['fqdn']}'.")
   end
-  n['rdiff-backup']['client']['jobs'].keys.each do |src|
+  
+  srcs = Set.new
+  srcs.merge(servernode['rdiff-backup']['server']['jobs'].keys)
+  srcs.merge(n['rdiff-backup']['client']['jobs'].keys)
+  srcs.each do |src|
     if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
-      job = deep_copy(n['rdiff-backup']['server']['jobs']['default']) || Hash.new # Start with the server's default attributes.
-      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || Hash.new) # Merge the client's default attributes over the top.
-      deep_merge!(job, n['rdiff-backup']['server']['jobs'][src] || Hash.new) # Merge the server's node-specific attributes over the top.
-      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || Hash.new) # Merge the job-specific attributes over the top.
+
+      job = deep_copy(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || Hash.new) # Merge the client's default attributes over the top. (Levels 4 and 5)
+      deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || Hash.new) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || Hash.new) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
 
       # Keep higher-level attributes in the job object for convenience.
       job['source-dir'] = src

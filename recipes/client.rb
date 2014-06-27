@@ -19,18 +19,25 @@
 
 HOSTS_DATABAG = 'rdiff-backup_hosts'
 
+# Default attributes.
+node.default['rdiff-backup']['client']['ssh-port'] = "22"
+node.default['rdiff-backup']['client']['user'] = "rdiff-backup-client"
+node.default['rdiff-backup']['client']['jobs'] = {}
+
 # Install rdiff-backup.
 package "rdiff-backup" do
   action :install
 end
 
 # Use the user from the host's databag if it exists and is specified, otherwise use the one from the node definition.
+user = node['rdiff-backup']['client']['user']
 databag = data_bag(HOSTS_DATABAG)
 fqdn = node['fqdn'].gsub('.', '_')
 if databag.include?(fqdn)
-  user = databag[fqdn]['rdiff-backup']['client']['user']
-else
-  user = node['rdiff-backup']['client']['user']
+  databagnode = data_bag_item(HOSTS_DATABAG, fqdn)
+  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['client'] and databagnode['rdiff-backup']['client']['user']
+    user = databagnode['rdiff-backup']['client']['user']
+  end
 end
 
 # Create the server backup group.
