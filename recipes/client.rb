@@ -23,15 +23,16 @@ HOSTS_DATABAG = 'rdiff-backup_hosts'
 package 'rdiff-backup'
 
 # Use the user from the host's databag if it exists and is specified, otherwise use the one from the node definition.
-user = node['rdiff-backup']['client']['user']
 databag = data_bag(HOSTS_DATABAG)
 fqdn = node['fqdn'].gsub('.', '_')
 if databag.include?(fqdn)
   databagnode = data_bag_item(HOSTS_DATABAG, fqdn)
-  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['client'] and databagnode['rdiff-backup']['client']['user']
-    user = databagnode['rdiff-backup']['client']['user']
+  begin
+    user = databagnode.fetch('rdiff-backup').fetch('client').fetch('user')
+  rescue
   end
 end
+user ||= node['rdiff-backup']['client']['user']
 
 # Create the server backup group.
 group user do
