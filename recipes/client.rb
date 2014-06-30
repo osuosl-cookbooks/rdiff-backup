@@ -19,11 +19,6 @@
 
 HOSTS_DATABAG = 'rdiff-backup_hosts'
 
-# Default attributes.
-node.default['rdiff-backup']['client']['ssh-port'] = "22"
-node.default['rdiff-backup']['client']['user'] = "rdiff-backup-client"
-node.default['rdiff-backup']['client']['jobs'] = {}
-
 # Install rdiff-backup.
 package "rdiff-backup" do
   action :install
