@@ -29,9 +29,9 @@ end
 # Recursive copy for Chef node hashes; only copies attributes relevant to rdiff-backup.
 def deep_copy_node(oldhash)
   newhash = {}
-  newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
   newhash['fqdn'] = oldhash['fqdn']
   newhash['chef_environment'] = oldhash['chef_environment']
+  newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
   return newhash
 end
 
