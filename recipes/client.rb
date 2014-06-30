@@ -52,7 +52,7 @@ end
 # As long as the pubkey databag exists for the user...
 if data_bag('users') and data_bag('users').include?(user)
   # Copy over the user's ssh pubkey if they're not already set up.
-  if not (node['users'] and node['users'].include?(user))
+  if not (node.fetch('users',{}).include?(user))
     node.set['users'] = [user].concat(node['users']) # Add the user to the list of users to set up for this node.
   end
   include_recipe 'user::data_bag'

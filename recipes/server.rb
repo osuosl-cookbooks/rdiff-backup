@@ -87,10 +87,10 @@ databaghosts.each do |databagitem|
   databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
   databagnode.delete('id')
 
-  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['server'] and servernode['fqdn'] == databagnode['fqdn']
+  if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
     deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
   end
-  if databagnode['rdiff-backup'] and databagnode['rdiff-backup']['client']
+  if databagnode.fetch('rdiff-backup',{})['client']
     clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
   end
 end
