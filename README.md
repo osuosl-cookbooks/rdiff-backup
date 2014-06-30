@@ -11,12 +11,12 @@ Requirements
 ## Required Cookbooks:
 
 * chef-user
+* partial_search (for more efficient chef search)
 
 ## Optional Cookbooks:
 
 * sudo (unless running backups as root)
 * nagios (for nagios alerts regarding backup statuses)
-* partial_search (for more efficient chef search)
 
 Features
 --------
