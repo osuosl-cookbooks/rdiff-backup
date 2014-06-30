@@ -119,9 +119,7 @@ end
 # Install required packages.
 packages = %w[ rdiff-backup cronolog ]
 packages.each do |p|
-  package p do
-      action :install
-  end
+  package p
 end
 
 # Create the server backup group.

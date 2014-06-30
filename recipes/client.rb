@@ -20,9 +20,7 @@
 HOSTS_DATABAG = 'rdiff-backup_hosts'
 
 # Install rdiff-backup.
-package "rdiff-backup" do
-  action :install
-end
+package 'rdiff-backup'
 
 # Use the user from the host's databag if it exists and is specified, otherwise use the one from the node definition.
 user = node['rdiff-backup']['client']['user']
