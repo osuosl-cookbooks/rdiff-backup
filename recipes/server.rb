@@ -28,7 +28,7 @@ end
 
 # Recursive copy for Chef node hashes; only copies attributes relevant to rdiff-backup.
 def deep_copy_node(oldhash)
-  newhash = Hash.new
+  newhash = {}
   newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
   newhash['fqdn'] = oldhash['fqdn']
   newhash['chef_environment'] = oldhash['chef_environment']
@@ -40,7 +40,7 @@ def deep_merge!(bot, top)
   top.keys.each do |key|
     if top[key].is_a?(Hash)
       unless bot[key].is_a?(Hash) # Make a new subhash in bot if top has one there.
-        bot[key] = Hash.new
+        bot[key] = {}
       end
       deep_merge!(bot[key], top[key])
     else
@@ -175,9 +175,9 @@ clientnodes.each do |n|
     if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
 
       job = deep_copy_node(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
-      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || Hash.new) # Merge the client's default attributes over the top. (Levels 4 and 5)
-      deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || Hash.new) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
-      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || Hash.new) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
+      deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
 
       # Keep higher-level attributes in the job object for convenience.
       job['source-dir'] = src
@@ -186,7 +186,7 @@ clientnodes.each do |n|
       job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
 
       # Remove exclusion rules that don't apply to this job
-      relevantdirs = Array.new
+      relevantdirs = []
       job['exclude-dirs'].each do |dir|
         relevantdirs << dir if dir.start_with?(src)
       end
@@ -200,7 +200,7 @@ end
 # Keep the set of jobs in "bare" format too so we can compare with the "bare" pre-existing jobs.
 specifiedjobs = Set.new
 jobs.each do |job|
-  newjob = Hash.new # Create a new "bare" job with just enough information to identify it.
+  newjob = {} # Create a new "bare" job with just enough information to identify it.
   newjob['fqdn'] = job['fqdn']
   newjob['source-dir'] = job['source-dir'].gsub("/", "-")
   specifiedjobs << newjob
@@ -212,7 +212,7 @@ if File.exists?(CRON_FILE)
   File.open(CRON_FILE, "r") do |file|
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
-        newjob = Hash.new # Create a new "bare" job with just enough information to identify it.
+        newjob = {} # Create a new "bare" job with just enough information to identify it.
         newjob['fqdn'] = line.gsub(/.*\/(.*)_.*/, '\1').strip
         newjob['source-dir'] = line.split('_')[-1].strip
         existingjobs << newjob
