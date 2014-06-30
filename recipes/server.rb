@@ -37,17 +37,7 @@ end
 
 # Recursive bot.merge!(top) for hashes.
 def deep_merge!(bot, top)
-  top.keys.each do |key|
-    if top[key].is_a?(Hash)
-      unless bot[key].is_a?(Hash) # Make a new subhash in bot if top has one there.
-        bot[key] = {}
-      end
-      deep_merge!(bot[key], top[key])
-    else
-      bot[key] = top[key]
-    end
-  end
-  return bot
+  bot.merge!(top) { |k, botv, topv| (botv.class == Hash and topv.class == Hash) ? deep_merge!(botv, topv) : topv}
 end
 
 # Recursive bot.merge(top) for hashes; returns new hash rather than modifying the bottom one.
