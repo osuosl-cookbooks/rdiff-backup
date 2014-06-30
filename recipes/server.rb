@@ -26,10 +26,10 @@ def deep_copy(object)
   Marshal.load(Marshal.dump(object))
 end
 
-# Recursive copy for Chef node hashes; only copies stuff relevant to rdiff-backup.
+# Recursive copy for Chef node hashes; only copies attributes relevant to rdiff-backup.
 def deep_copy_node(oldhash)
   newhash = Hash.new
-  newhash['rdiff-backup'] = JSON.parse(oldhash['rdiff-backup'].to_json) # This is passed through JSON to convert it from an ImmutableMash to a plain old Hash.
+  newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
   newhash['fqdn'] = oldhash['fqdn']
   newhash['chef_environment'] = oldhash['chef_environment']
   return newhash
@@ -57,7 +57,7 @@ end
 
 # Attribute hashes. These store the various levels of attributes so they can be merged together properly once we have determined all of them. See the README for explanation of attribute precedence.
 # 'node' covers level 1 (cookbook default attributes) and level 2 (server node attributes).
-servernode = deep_copy_node(node.to_hash) # Covers level 3 (server databag attributes) once the contents of the server databag item are merged over it (if it exists).
+servernode = deep_copy_node(node) # Covers level 3 (server databag attributes) once the contents of the server databag item are merged over it (if it exists).
 clientsearchnodes = {} # Covers level 4 (client node attributes) once it is filled with client nodes from chef search, keyed by fqdn.
 clientdatabagnodes = {} # Covers level 5 (client databag attributes) once it is filled with client nodes from the databag, keyed by fqdn.
 clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
@@ -74,7 +74,7 @@ end
 Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
 searchnodes = search(:node, 'recipes:rdiff-backup\:\:client')
 searchnodes.each do |n|
-  searchnode = deep_copy_node(n.to_hash)
+  searchnode = deep_copy_node(n)
   clientsearchnodes[searchnode['fqdn']] = searchnode
 end
 
@@ -105,7 +105,7 @@ clientnodes = clientsearchnodes.values
 
 # Filter out clients not in our environment, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
-  deep_copy(clientnodes).each do |n|
+  deep_copy_node(clientnodes).each do |n|
     if n['chef_environment'] != servernode['chef_environment']
       clientnodes.delete(n)
     end
@@ -174,7 +174,7 @@ clientnodes.each do |n|
   srcs.each do |src|
     if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
 
-      job = deep_copy(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+      job = deep_copy_node(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
       deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || Hash.new) # Merge the client's default attributes over the top. (Levels 4 and 5)
       deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || Hash.new) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
       deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || Hash.new) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)

@@ -6,6 +6,8 @@ Backs up hosts using rdiff-backup.
 Requirements
 ------------
 
+* `Chef >= 11.10`
+
 ## Cookbooks:
 
 * chef-user
