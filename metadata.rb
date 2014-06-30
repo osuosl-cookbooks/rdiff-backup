@@ -6,6 +6,7 @@ description      'Installs/Configures rdiff-backup'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '0.3.0'
 
-depends "sudo"
 depends "user"
+recommends "sudo"
 recommends "nagios"
+recommends "partial_search"

@@ -8,11 +8,15 @@ Requirements
 
 * `Chef >= 11.10`
 
-## Cookbooks:
+## Required Cookbooks:
 
 * chef-user
+
+## Optional Cookbooks:
+
 * sudo (unless running backups as root)
 * nagios (for nagios alerts regarding backup statuses)
+* partial_search (for more efficient chef search)
 
 Features
 --------
