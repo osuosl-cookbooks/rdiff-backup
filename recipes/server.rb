@@ -64,9 +64,9 @@ clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
 
 # Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
-  excludepath = "/home/#{servernode['rdiff-backup']['server']['user']}/exclude/#{job['fqdn']}_#{job['source-dir']}"
+  excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', "#{job['fqdn']}_#{job['source-dir']}")
   File.delete(excludepath) if File.exists?(excludepath)
-  scriptpath = "/home/#{servernode['rdiff-backup']['server']['user']}/scripts/#{job['fqdn']}_#{job['source-dir']}"
+  scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
   File.delete(scriptpath) if File.exists?(scriptpath)
 end
 
@@ -135,7 +135,7 @@ user servernode['rdiff-backup']['server']['user'] do
   gid servernode['rdiff-backup']['server']['user']
   system true
   shell '/bin/bash'
-  home '/home/' + servernode['rdiff-backup']['server']['user']
+  home File.join('/home', servernode['rdiff-backup']['server']['user'])
   supports :manage_home => true
 end
 
@@ -143,8 +143,8 @@ end
 if servernode['rdiff-backup']['server']['nagios']['alerts']
 
   # Copy over the check_rdiff nrpe plugin.
-  cookbook_file "#{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff" do
-    source "nagios/plugins/check_rdiff"
+  cookbook_file File.join(servernode['rdiff-backup']['server']['nagios']['plugin-dir'], 'check_rdiff') do
+    source File.join('nagios', 'plugins', 'check_rdiff')
     mode '755'
     action :create
   end
@@ -154,7 +154,7 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
     user      'nrpe'
     runas     'root'
     nopasswd  true
-    commands  ["#{node['nagios']['plugin_dir']}/check_rdiff"]
+    commands  [File.join(node['nagios']['plugin_dir']}, 'check_rdiff')]
   end
 
 end
@@ -243,7 +243,7 @@ jobs.each do |job|
   # Shorten some long variables for readability.
   fqdn = job['fqdn']
   sd = job['source-dir']
-  dd = "#{job['destination-dir']}/filesystem/#{fqdn}#{sd}"
+  dd = File.join(job['destination-dir']}, 'filesystem', fqdn, sd)
   suser = servernode['rdiff-backup']['server']['user']
   maxchange = job['nagios']['max-change']
   latestart = job['nagios']['max-late-start']
@@ -265,14 +265,14 @@ jobs.each do |job|
   setjobs += 1
 
   # Create the exclude files for each job.
-  directory "/home/#{suser}/exclude" do
+  directory File.join('/home', suser, 'exclude') do
     owner suser
     group suser
     mode '0775'
     recursive true
     action :create
   end
-  template "/home/#{suser}/exclude/#{fqdn}_#{sd.gsub("/", "-")}" do
+  template File.join('/home', suser, 'exclude', "#{fqdn}_#{sd.gsub("/", "-")}") do
     source "exclude.erb"
     owner suser
     group suser
@@ -285,14 +285,14 @@ jobs.each do |job|
   end
 
   # Create scripts for each job.
-  directory "/home/#{suser}/scripts" do
+  directory File.join('/home', suser, 'scripts') do
     owner suser
     group suser
     mode '0775'
     recursive true
     action :create
   end
-  template "/home/#{suser}/scripts/#{fqdn}_#{sd.gsub("/", "-")}" do
+  template File.join('/home', suser, 'scripts', "#{fqdn}_#{sd.gsub("/", "-")}") do
     source "job.sh.erb"
     owner suser
     group suser
@@ -311,7 +311,7 @@ jobs.each do |job|
   end
   
   # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and File.exists?("#{dd}/rdiff-backup-data")
+  if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
 
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
@@ -358,7 +358,7 @@ directory LOG_DIR do
 end
 
 # Create a symlink to the log directory from the home directory.
-link "/home/#{servernode['rdiff-backup']['server']['user']}/logs" do
+link File.join('/home', servernode['rdiff-backup']['server']['user'], 'logs') do
   owner servernode['rdiff-backup']['server']['user']
   group servernode['rdiff-backup']['server']['user']
   mode '0775'

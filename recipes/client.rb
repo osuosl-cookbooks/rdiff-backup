@@ -46,7 +46,7 @@ user user do
   gid user
   system true
   shell '/bin/bash'
-  home '/home/' + user
+  home File.join('/home', user)
   supports :manage_home => true
 end
 
