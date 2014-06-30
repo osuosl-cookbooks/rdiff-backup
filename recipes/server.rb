@@ -63,7 +63,18 @@ end
 
 # Find nodes to back up by searching.
 Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
-searchnodes = search(:node, 'recipes:rdiff-backup\:\:client')
+query = 'recipes:rdiff-backup\:\:client'
+keys = {
+  'fqdn'              => [ 'fqdn' ],
+  'chef_environment'  => [ 'chef_environment' ],
+  'rdiff-backup'      => [ 'rdiff-backup' ]
+}
+begin
+  searchnodes = partial_search(:node, query, :keys => keys)
+rescue
+  Chef::Log.info("Partial search failed; reverting to normal search.")
+  searchnodes = search(:node, query)
+end
 searchnodes.each do |n|
   searchnode = deep_copy_node(n)
   clientsearchnodes[searchnode['fqdn']] = searchnode
