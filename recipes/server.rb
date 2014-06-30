@@ -142,7 +142,7 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
     user      'nrpe'
     runas     'root'
     nopasswd  true
-    commands  [File.join(node['nagios']['plugin_dir']}, 'check_rdiff')]
+    commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff')]
   end
 
 end
@@ -231,7 +231,7 @@ jobs.each do |job|
   # Shorten some long variables for readability.
   fqdn = job['fqdn']
   sd = job['source-dir']
-  dd = File.join(job['destination-dir']}, 'filesystem', fqdn, sd)
+  dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
   suser = servernode['rdiff-backup']['server']['user']
   maxchange = job['nagios']['max-change']
   latestart = job['nagios']['max-late-start']
