@@ -173,8 +173,8 @@ clientnodes.each do |n|
       # Keep higher-level attributes in the job object for convenience.
       job['source-dir'] = src
       job['fqdn'] = n['fqdn']
-      job['user'] = n['rdiff-backup']['client']['user']
-      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
+      job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
+      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
 
       # Remove exclusion rules that don't apply to this job
       relevantdirs = []
