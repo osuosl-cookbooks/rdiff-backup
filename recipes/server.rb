@@ -95,7 +95,7 @@ clientnodes = clientsearchnodes.values
 
 # Filter out clients not in our environment, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
-  deep_copy_node(clientnodes).each do |n|
+  deep_copy(clientnodes).each do |n|
     if n['chef_environment'] != servernode['chef_environment']
       clientnodes.delete(n)
     end
@@ -164,7 +164,7 @@ clientnodes.each do |n|
   srcs.each do |src|
     if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
 
-      job = deep_copy_node(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+      job = deep_copy(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
       deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
       deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
       deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
