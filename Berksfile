@@ -1,5 +1,8 @@
-cookbook "yum", "< 3.0.0"
-
-site :opscode
-
+source "https://api.berkshelf.com"
+cookbook "yum"
+cookbook "yum-epel"
+cookbook "user"
+cookbook "partial_search"
+cookbook "sudo"
+cookbook "nrpe"
 metadata

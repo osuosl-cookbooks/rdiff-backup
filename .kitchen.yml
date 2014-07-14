@@ -1,0 +1,18 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  name: chef_solo
+
+platforms:
+  - name: centos-6.5
+
+suites:
+  - name: client
+    run_list:
+      - recipe[rdiff-backup::client]
+    attributes:
+  - name: server
+    run_list:
+      - recipe[rdiff-backup::server]

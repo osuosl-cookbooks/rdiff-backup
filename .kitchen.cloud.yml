@@ -1,0 +1,43 @@
+---
+driver_config:
+  openstack_username: <%= ENV['OS_USERNAME'] %>
+  openstack_api_key: <%= ENV['OS_PASSWORD'] %>
+  openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
+  key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
+  private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
+  public_key_path: <%= ENV['OS_PUBLIC_SSH_KEY'] %>
+  openstack_tenant: <%= ENV['OS_TENANT'] %>
+  floating_ip: <%= ENV['OS_FLOATING_IP'] %>
+  flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
+
+provisioner:
+  name: chef_solo
+  attributes:
+    mysql:
+      server_root_password: rootpass
+      server_repl_password: replpass
+    authorization:
+      sudo:
+        users:
+          - vagrant
+          - centos
+    omnibus_updater:
+      disabled: true
+
+platforms:
+- name: centos-6.5
+  driver_plugin: openstack
+  driver_config:
+    username: centos
+    image_ref: "CentOS 6.5"
+
+suites:
+  - name: client
+    run_list:
+      - recipe[yum]
+      - recipe[yum-epel]
+      - recipe[rdiff-backup::client]
+    attributes:
+  - name: server
+    run_list:
+      - recipe[rdiff-backup::server]
