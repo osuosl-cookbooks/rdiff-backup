@@ -10,13 +10,19 @@ Requirements
 
 ## Required Cookbooks:
 
-* chef-user
-* partial_search (for more efficient chef search)
+* `yum` (for installing rdiff-backup)
+* `yum-epel` (for installing rdiff-backup)
+* `chef-user` (for setting up user accounts)
 
 ## Optional Cookbooks:
 
-* sudo (unless running backups as root)
-* nagios (for nagios alerts regarding backup statuses)
+* `partial_search` (for more efficient chef search)
+* `sudo` (for reading files to back up and so the nrpe user can read the status of repos)
+* `nrpe` (for nagios alerts regarding backup statuses)
+
+## Optional External Cookbooks:
+
+* `nagios >= ???` (for nagios alerts regarding backup statuses)
 
 Features
 --------
