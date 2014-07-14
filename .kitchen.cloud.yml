@@ -34,8 +34,6 @@ platforms:
 suites:
   - name: client
     run_list:
-      - recipe[yum]
-      - recipe[yum-epel]
       - recipe[rdiff-backup::client]
     attributes:
   - name: server
