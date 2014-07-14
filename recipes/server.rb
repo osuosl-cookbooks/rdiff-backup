@@ -277,7 +277,7 @@ jobs.each do |job|
   directory dd do
     owner suser
     group suser
-    mode '0775'
+    mode '775'
     recursive true
     action :create
   end
@@ -291,15 +291,15 @@ jobs.each do |job|
   directory File.join('/home', suser, 'exclude') do
     owner suser
     group suser
-    mode '0775'
+    mode '775'
     recursive true
     action :create
   end
   template File.join('/home', suser, 'exclude', "#{fqdn}_#{sd.gsub("/", "-")}") do
-    source "exclude.erb"
+    source 'exclude.erb'
     owner suser
     group suser
-    mode "0664"
+    mode '664'
     variables({
       :src => sd,
       :paths => job['exclude-dirs'],
@@ -311,15 +311,15 @@ jobs.each do |job|
   directory File.join('/home', suser, 'scripts') do
     owner suser
     group suser
-    mode '0775'
+    mode '775'
     recursive true
     action :create
   end
   template File.join('/home', suser, 'scripts', "#{fqdn}_#{sd.gsub("/", "-")}") do
-    source "job.sh.erb"
+    source 'job.sh.erb'
     owner suser
     group suser
-    mode "0774"
+    mode '774'
     variables({
       :fqdn => fqdn,
       :src => sd,
@@ -359,8 +359,8 @@ node.set['nagios']['remote_services'] = services
 
 # Create the crontab for all the jobs.
 template CRON_FILE do
-  source "cron.d.erb"
-  mode "0644"
+  source 'cron.d.erb'
+  mode '644'
   variables({
     :shour => servernode['rdiff-backup']['server']['start-hour'],
     :ehour => servernode['rdiff-backup']['server']['end-hour'],
@@ -375,7 +375,7 @@ end
 directory LOG_DIR do
   owner servernode['rdiff-backup']['server']['user']
   group servernode['rdiff-backup']['server']['user']
-  mode '0775'
+  mode '775'
   recursive true
   action :create
 end
@@ -384,7 +384,7 @@ end
 link File.join('/home', servernode['rdiff-backup']['server']['user'], 'logs') do
   owner servernode['rdiff-backup']['server']['user']
   group servernode['rdiff-backup']['server']['user']
-  mode '0775'
+  mode '775'
   link_type :symbolic
   to LOG_DIR
   action :create
