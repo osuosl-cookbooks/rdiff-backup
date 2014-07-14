@@ -72,8 +72,13 @@ keys = {
 begin
   searchnodes = partial_search(:node, query, :keys => keys)
 rescue
-  Chef::Log.info("Partial search failed; reverting to normal search.")
-  searchnodes = search(:node, query)
+  begin
+    Chef::Log.warn("Partial search failed; reverting to normal search.")
+    searchnodes = search(:node, query)
+  rescue
+    Chef::Log.warn("Normal search failed; not searching.")
+    searchnodes = []
+  end
 end
 searchnodes.each do |n|
   searchnode = deep_copy_node(n)
@@ -81,18 +86,23 @@ searchnodes.each do |n|
 end
 
 # Find nodes to back up from the hosts databag too.
-databaghosts = data_bag(HOSTS_DATABAG).to_set
-databaghosts.each do |databagitem|
-  databagnode = deep_copy(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
-  databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
-  databagnode.delete('id')
+begin
+  databaghosts = data_bag(HOSTS_DATABAG).to_set
+  databaghosts.each do |databagitem|
+    databagnode = deep_copy(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
+    databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
+    databagnode.delete('id')
 
-  if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
-    deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
+    if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
+      deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
+    end
+    if databagnode.fetch('rdiff-backup',{})['client']
+      clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
+    end
   end
-  if databagnode.fetch('rdiff-backup',{})['client']
-    clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
-  end
+rescue
+  Chef::Log.warn("Unable to load databag '#{HOSTS_DATABAG}'")
+  databaghosts = Set.new
 end
 
 # Merge clientdatabagnodes over clientsearchnodes.
@@ -115,12 +125,13 @@ if servernode['rdiff-backup']['server']['restrict-to-own-environment']
 end
 
 if clientnodes.empty?
-  Chef::Log.info("WARNING: No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
+  Chef::Log.warn("No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
 end
 
 # Install required packages.
-packages = %w[ rdiff-backup cronolog ]
-packages.each do |p|
+include_recipe 'yum'
+include_recipe 'yum-epel'
+%w[ rdiff-backup cronolog ].each do |p|
   package p
 end
 
@@ -143,18 +154,30 @@ end
 if servernode['rdiff-backup']['server']['nagios']['alerts']
 
   # Copy over the check_rdiff nrpe plugin.
+  directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
+    mode '775'
+    recursive true
+    action :create
+  end
   cookbook_file File.join(servernode['rdiff-backup']['server']['nagios']['plugin-dir'], 'check_rdiff') do
     source File.join('nagios', 'plugins', 'check_rdiff')
-    mode '755'
+    mode '775'
     action :create
   end
 
   # Give the user sudo access for the nrpe plugin.
-  sudo 'nrpe' do
-    user      'nrpe'
-    runas     'root'
-    nopasswd  true
-    commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff')]
+  if servernode['rdiff-backup']['server']['sudo']
+    node.force_override['authorization']['sudo']['include_sudoers_d'] = true
+    begin
+      sudo 'nrpe' do
+        user      'nrpe'
+        runas     'root'
+        nopasswd  true
+        commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff')]
+      end
+    rescue
+      Chef::Log.warn("Unable to provide sudo access to nrpe user 'nrpe'")
+    end
   end
 
 end
@@ -167,7 +190,7 @@ jobs = []
 clientnodes.each do |n|
 
   if n['rdiff-backup']['client']['jobs'].empty?
-    Chef::Log.info("WARNING: No jobs specified for host '#{n['fqdn']}'.")
+    Chef::Log.warn("No jobs specified for host '#{n['fqdn']}'.")
   end
   
   srcs = Set.new
