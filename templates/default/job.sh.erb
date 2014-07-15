@@ -35,7 +35,7 @@ else
     rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files \
       --exclude-fifos --exclude-sockets --exclude-other-filesystems \
       --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
-      --remote-schema 'ssh -Cp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @cuser %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>' 2>&1 | log
+      --remote-schema 'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @cuser %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>' 2>&1 | log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
       echo 'Backup complete for "<%= @fqdn %>:<%= @src %>".' | logboth
     else

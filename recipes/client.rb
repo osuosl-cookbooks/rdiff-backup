@@ -66,6 +66,7 @@ if user != 'root'
         runas     'root'
         nopasswd  true
         commands  ['/usr/bin/rdiff-backup --server --restrict-read-only /']
+        defaults  ['!requiretty']
       end
     rescue
       Chef::Log.warn("Unable to provide sudo access to rdiff-backup user '#{user}'")
