@@ -59,6 +59,7 @@ my @hour;
 my $pid_1;
 my $pid_2;
 my $size_now;
+my $new_file_size;
 my $size_change;
 my $increment_file_size;
 my $script;
@@ -164,14 +165,18 @@ if($no_mir == 1)
 	$size_now = <FILE>;
 	($size_now) = $size_now =~ /SourceFileSize (.*) \(.*\)$/;
 	
-	<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;
+	<FILE>;<FILE>;<FILE>;
+  $new_file_size = <FILE>;
+	($new_file_size) = $new_file_size =~ /NewFileSize (.*) \(.*\)$/;
+	
+  <FILE>;<FILE>;<FILE>;<FILE>;<FILE>;<FILE>;
 	($increment_file_size) = <FILE> =~ /IncrementFileSize (.*) \(.*\)$/;
 	($size_change) = <FILE> =~ /TotalDestinationSizeChange (.*) \(.*\)$/;
 	$elapsed = localtime(stat($stats_fn)->mtime);
-	if($increment_file_size == 0)
+	if($size_now == $new_file_size)
 	{
 		$size_change /= 1048576;
-    printf("OK: First backup finished %s. Change %d MB\n", $elapsed, $size_change / 1048576);
+    printf("OK: First backup finished %s. Total: %d MB\n", $elapsed, $size_now / 1048576);
 		exit(0);
 	}
 	if($size_change >= $l_thresh)

@@ -17,217 +17,380 @@
 # limitations under the License.
 #
 
-# Install rdiff-backup.
-package "rdiff-backup" do
-  action :install
+HOSTS_DATABAG = 'rdiff-backup_hosts'
+CRON_FILE = '/etc/cron.d/rdiff-backup'
+LOG_DIR = '/var/log/rdiff-backup'
+
+# Recursive copy for objects like nested Hashes.
+def deep_copy(object)
+  Marshal.load(Marshal.dump(object))
+end
+
+# Recursive copy for Chef node hashes; only copies attributes relevant to rdiff-backup.
+def deep_copy_node(oldhash)
+  newhash = {}
+  newhash['fqdn'] = oldhash['fqdn']
+  newhash['chef_environment'] = oldhash['chef_environment']
+  newhash['chef_environment'] ||= oldhash.chef_environment # In case it's an actual Chef node and not a hash emulating one.
+  newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
+  return newhash
+end
+
+# Recursive bot.merge!(top) for hashes.
+def deep_merge!(bot, top)
+  bot.merge!(top) { |k, botv, topv| (botv.class == Hash and topv.class == Hash) ? deep_merge!(botv, topv) : topv}
+end
+
+# Recursive bot.merge(top) for hashes; returns new hash rather than modifying the bottom one.
+def deep_merge(bot, top)
+  deep_merge!(deep_copy(bot), top)
+end
+
+# Attribute hashes. These store the various levels of attributes so they can be merged together properly once we have determined all of them. See the README for explanation of attribute precedence.
+# 'node' covers level 1 (cookbook default attributes) and level 2 (server node attributes).
+servernode = deep_copy_node(node) # Covers level 3 (server databag attributes) once the contents of the server databag item are merged over it (if it exists).
+clientsearchnodes = {} # Covers level 4 (client node attributes) once it is filled with client nodes from chef search, keyed by fqdn.
+clientdatabagnodes = {} # Covers level 5 (client databag attributes) once it is filled with client nodes from the databag, keyed by fqdn.
+clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
+
+# Removes a job, deleting the files associated with it.
+def remove_job(job, servernode)
+  excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', "#{job['fqdn']}_#{job['source-dir']}")
+  File.delete(excludepath) if File.exists?(excludepath)
+  scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
+  File.delete(scriptpath) if File.exists?(scriptpath)
+end
+
+# Find nodes to back up by searching.
+Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
+query = 'recipes:rdiff-backup\:\:client'
+keys = {
+  'fqdn'              => [ 'fqdn' ],
+  'chef_environment'  => [ 'chef_environment' ],
+  'rdiff-backup'      => [ 'rdiff-backup' ]
+}
+begin
+  searchnodes = partial_search(:node, query, :keys => keys)
+rescue
+  begin
+    Chef::Log.warn("Partial search failed; reverting to normal search.")
+    searchnodes = search(:node, query)
+  rescue
+    Chef::Log.warn("Normal search failed; not searching.")
+    searchnodes = []
+  end
+end
+searchnodes.each do |n|
+  searchnode = deep_copy_node(n)
+  clientsearchnodes[searchnode['fqdn']] = searchnode
+end
+
+# Find nodes to back up from the hosts databag too.
+begin
+  databaghosts = data_bag(HOSTS_DATABAG).to_set
+  databaghosts.each do |databagitem|
+    databagnode = deep_copy(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
+    databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
+    databagnode.delete('id')
+
+    if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
+      deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
+    end
+    if databagnode.fetch('rdiff-backup',{})['client']
+      clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
+    end
+  end
+rescue
+  Chef::Log.warn("Unable to load databag '#{HOSTS_DATABAG}'")
+  databaghosts = Set.new
+end
+
+# Merge clientdatabagnodes over clientsearchnodes.
+clientdatabagnodes.each do |dfqdn, dnode|
+  if clientsearchnodes[dfqdn]
+    deep_merge!(clientsearchnodes[dfqdn], dnode)
+  else
+    clientsearchnodes[dfqdn] = dnode
+  end
+end
+clientnodes = clientsearchnodes.values
+
+# Filter out clients not in our environment, if applicable.
+if servernode['rdiff-backup']['server']['restrict-to-own-environment']
+  deep_copy(clientnodes).each do |n|
+    if n['chef_environment'] != servernode['chef_environment']
+      clientnodes.delete(n)
+    end
+  end
+end
+
+if clientnodes.empty?
+  Chef::Log.warn("No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
+end
+
+# Install required packages.
+include_recipe 'yum'
+include_recipe 'yum-epel'
+%w[ rdiff-backup cronolog ].each do |p|
+  package p
 end
 
 # Create the server backup group.
-group node['rdiff-backup']['server']['user'] do
+group servernode['rdiff-backup']['server']['user'] do
   system true
 end
 
 # Create the server backup user.
-user node['rdiff-backup']['server']['user'] do
+user servernode['rdiff-backup']['server']['user'] do
   comment 'User for rdiff-backup server backups'
-  gid node['rdiff-backup']['server']['user']
+  gid servernode['rdiff-backup']['server']['user']
   system true
   shell '/bin/bash'
-  home '/home/' + node['rdiff-backup']['server']['user']
+  home File.join('/home', servernode['rdiff-backup']['server']['user'])
   supports :manage_home => true
+end
+
+# Copy over and set up the Nagios nrpe plugin, if applicable.
+if servernode['rdiff-backup']['server']['nagios']['alerts']
+
+  # Copy over the check_rdiff nrpe plugin.
+  directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
+    mode '775'
+    recursive true
+    action :create
+  end
+  cookbook_file File.join(servernode['rdiff-backup']['server']['nagios']['plugin-dir'], 'check_rdiff') do
+    source File.join('nagios', 'plugins', 'check_rdiff')
+    mode '775'
+    action :create
+  end
+
+  # Give the user sudo access for the nrpe plugin.
+  if servernode['rdiff-backup']['server']['sudo']
+    node.force_override['authorization']['sudo']['include_sudoers_d'] = true
+    begin
+      sudo 'nrpe' do
+        user      'nrpe'
+        runas     'root'
+        nopasswd  true
+        commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff')]
+      end
+    rescue
+      Chef::Log.warn("Unable to provide sudo access to nrpe user 'nrpe'")
+    end
+  end
+
 end
 
 # Note: The server backup user's private key must be copied over manually.
 
-# Search for nodes to back up.
-Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
-rawnodes = search(:node, 'recipes:rdiff-backup\:\:client')
+jobs = []
 
-# Convert the nodes to hashes for easy management.
-nodes = Set.new
-rawnodes.each do |rawnode|
-  nodes << rawnode.to_hash
-end
+# For each node, create a new job object for each job by merging attributes.
+clientnodes.each do |n|
 
-# Get nodes to back up from the unmanagedhosts databag too.
-unmanagedhosts = Set.new
-unmanagedhosts = data_bag('rdiff-backup_unmanagedhosts').to_set
-unmanagedhosts.each do |host|
-  
-  hostbag = Hash.new
-  hostbag = data_bag_item('rdiff-backup_unmanagedhosts', host)
-  
-  # Create a new "node" hash for each unmanaged host and populate it with the default client attributes (assuming that the client attributes on the rdiff-backup server are in fact intended to be the default attributes).
-  newnode = Hash.new
-  newnode['rdiff-backup'] = Hash.new
-  newnode['rdiff-backup']['client'] = Hash.new
-  node['rdiff-backup']['client'].each do |k,v|
-    newnode['rdiff-backup']['client'].merge!({ k => v })
-  end
-  newnode['chef_environment'] = "_default" # Environment is set manually because it's not an rdiff-backup client attribute.
-
-  newnode['fqdn'] = hostbag['id'].gsub('_', '.') # We can assume the id exists because otherwise it's not a valid databag and wouldn't be returned by the data_bag_item function. The gsub is because periods can't be used in IDs, so we use underscores instead.
-
-  # Override the the default attributes with any other properties present in the databag.
-  hostbag.each do |k,v|
-    if k != "id"
-      if k != "environment"
-        newnode['rdiff-backup']['client'][k] = v
-      else
-        newnode['chef_environment'] = v
-      end
-    end 
+  if n['rdiff-backup']['client']['jobs'].empty?
+    Chef::Log.warn("No jobs specified for host '#{n['fqdn']}'.")
   end
   
-  # Add the new node to the list of nodes.
-  nodes << newnode
-end
+  srcs = Set.new
+  srcs.merge(servernode['rdiff-backup']['server']['jobs'].keys)
+  srcs.merge(n['rdiff-backup']['client']['jobs'].keys)
+  srcs.each do |src|
+    if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
 
-# Keep track of nodes that we are no longer backing up so we can make sure to remove jobs and/or nagios checks for them.
-nodestodelete = Set.new
+      job = deep_copy(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
+      deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
+      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
 
-# Filter out clients not in our environment, if applicable.
-if node['rdiff-backup']['server']['restrict-to-own-environment']
-  nodes.each do |n|
-    if n['chef_environment'] != node.chef_environment
-      nodestodelete << n
+      # Keep higher-level attributes in the job object for convenience.
+      job['source-dir'] = src
+      job['fqdn'] = n['fqdn']
+      job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
+      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
+
+      # Remove exclusion rules that don't apply to this job
+      relevantdirs = []
+      job['exclude-dirs'].each do |dir|
+        relevantdirs << dir if dir.start_with?(src)
+      end
+      job['exclude-dirs'] = relevantdirs
+
+      jobs << job
     end
-  end
-
-  nodestodelete.each do |n|
-    nodes.delete(n)
-  end
-end
-
-if nodes.empty?
-  Chef::Log.info("WARNING: No nodes returned from search or found in rdiff-backup_unmanagedclients databag.")
-else
-
-  # Distribute backups across a certain time period every day.
-  minutesbetweenbackups = ((node['rdiff-backup']['server']['endhour'] - node['rdiff-backup']['server']['starthour'] + 24) % 24 * 60 ) / nodes.size
-  hoursbetweenbackups = minutesbetweenbackups / 60
-  finishedbackups = 0
-  nodes.each do |n|
-    minute = (minutesbetweenbackups * finishedbackups) % 60
-    hour = (hoursbetweenbackups * finishedbackups) % 24 + node['rdiff-backup']['server']['starthour']
-
-    if !n['rdiff-backup']['client']['source-dirs'].empty?
-
-      # Format the list of paths to back up.
-      pathlist = String.new
-      n['rdiff-backup']['client']['source-dirs'].reject{ |dir| dir == "" }.each do |path| # Don't let blank lines be source dirs.
-        pathlist += " \"" + path + "\""
-      end
-
-      # Shorten the variables here to make the giant rdiff-backup command more readable.
-      fqdn = n['fqdn']
-      port = n['rdiff-backup']['client']['ssh-port']
-      dest = n['rdiff-backup']['client']['destination-dir']
-      period = n['rdiff-backup']['client']['retention-period']
-      args = n['rdiff-backup']['client']['additional-args']
-      user = n['rdiff-backup']['client']['user']
-      destpath = "#{dest}/filesystem/#{fqdn}/${path}"
-
-      # Create the base directory that this node's backups will go to (enough so that the rdiff-backup server user have write permission).
-      directory dest do
-        owner node['rdiff-backup']['server']['user']
-        group node['rdiff-backup']['server']['user']
-        mode '0775'
-        recursive true
-        action :create
-      end
-
-      # If there are any paths to back up...
-      if pathlist != " \"\""
-        # Create cron job for the node to back them up and then remove old backups.
-        cron_d "rdiff-backup-#{fqdn}" do
-          action :create
-          minute minute
-          hour hour
-          user node['rdiff-backup']['server']['user']
-          mailto "root@osuosl.org"
-          command "for path in#{pathlist}; do rdiff-backup #{args} --force --create-full-path --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems --remote-schema \"ssh -tCp #{port} -o StrictHostKeyChecking=no \\%s sudo rdiff-backup --server --restrict-read-only /\" \"#{user}\@#{fqdn}\:\:${path}\" \"#{destpath}\"; rdiff-backup --force --remove-older-than #{period} \"#{destpath}\"; done"
-        end
-      else
-        # Delete this node from the array of hosts to keep jobs for, so that its job will be deleted.
-        nodestodelete << n
-      end
-    end
-
-    finishedbackups += 1
   end
 end
 
-# Delete all rdiff-backup cron jobs that we didn't just enforce the existence of (useful for when you disable backups for a host). The reason why we don't just delete all cron jobs at the beginning of the recipe is so that valid cron jobs are always available, so that backups will run on time regardless of when the chef-client runs.
-nodestodelete.each do |n|
-  nodes.delete(n)
-end
-files = Dir.glob("/etc/cron.d/rdiff-backup-*")
-nodes.each do |n|
-  if files.include?(n['fqdn'])
-    files.delete(n['fqdn'])
-  end
-end
-files.each do |f|
-  File.delete(f)
+# Keep the set of jobs in "bare" format too so we can compare with the "bare" pre-existing jobs.
+specifiedjobs = Set.new
+jobs.each do |job|
+  newjob = {} # Create a new "bare" job with just enough information to identify it.
+  newjob['fqdn'] = job['fqdn']
+  newjob['source-dir'] = job['source-dir'].gsub("/", "-")
+  specifiedjobs << newjob
 end
 
-# Set up Nagios checks for the backups if the server has the nagios::client recipe and node['rdiff-backup']['server']['nagios-alerts'] = true.
-if node.recipes.include?("nagios::client")
-  if node['rdiff-backup']['server']['nagios-alerts']
-
-    # Copy over the check_rdiff nrpe plugin.
-    cookbook_file "#{node['nagios']['plugin_dir']}/check_rdiff" do
-      source "nagios/plugins/check_rdiff"
-      mode '755'
-      action :create
-    end
-
-    # Give the user sudo access for the nrpe plugin.
-    sudo 'nrpe' do
-      user      'nrpe'
-      runas     'root'
-      nopasswd  true
-      commands  ["#{node['nagios']['plugin_dir']}/check_rdiff"]
-    end
-
-    # For each node...
-    nodes.each do |n|
-      
-      # For each directory to be backed up...
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-
-        if sd != ""
-          # Shorten the variables to make the check command more readable.
-          dd = "#{n['rdiff-backup']['client']['destination-dir']}/filesystem/#{n['fqdn']}#{sd}"
-          warn = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-warning']
-          crit = node['rdiff-backup']['server']['endhour'] + node['rdiff-backup']['server']['nagios-critical']
-          nrpecheck = "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}"
-          maxchange = n['rdiff-backup']['client']['nagios-maxchange'] || 500
-          maxtime = n['rdiff-backup']['client']['nagios-maxtime'] || 24
-          
-          # Create the check.
-          nagios_service "rdiff-backup_#{n['fqdn']}_#{sd}" do
-            command_line "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheck}"
-            host_name node['fqdn']
-            action :add
-          end
-          nagios_nrpecheck nrpecheck do
-            command "sudo #{node['nagios']['plugin_dir']}/check_rdiff -r #{dd} -w #{warn} -c #{crit} -l #{maxchange} -p #{maxtime}"
-            action :add
-          end
-        end
-      end
-    end
-
-  # Remove all rdiff-backup checks if node['rdiff-backup']['server']['nagios'] == false
-  else
-    nodes.merge(nodestodelete).each do |n|
-      n['rdiff-backup']['client']['source-dirs'].each do |sd|
-        nagios_nrpecheck "check_rdiff-backup_#{n['fqdn']}_#{sd.gsub("/", "-")}" do
-          action :remove
-        end
+# Get the set of jobs which already exist so we can decide which ones to remove.
+existingjobs = Set.new
+if File.exists?(CRON_FILE)
+  File.open(CRON_FILE, "r") do |file|
+    file.each_line do |line|
+      if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
+        newjob = {} # Create a new "bare" job with just enough information to identify it.
+        newjob['fqdn'] = line.gsub(/.*\/(.*)_.*/, '\1').strip
+        newjob['source-dir'] = line.split('_')[-1].strip
+        existingjobs << newjob
       end
     end
   end
+end
+
+# Get the set of jobs that need to be removed by subtracting the set of specified jobs by the set of existing jobs.
+removejobs = existingjobs.dup.subtract(specifiedjobs)
+
+# Sort jobs by name to provide stable ordering
+jobs.sort! {|a,b| a['fqdn']+a['source-dir'] <=> b['fqdn']+b['source-dir'] }
+
+# Figure out how much time to wait between starting jobs.
+unless jobs.empty?
+  minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60 ) / jobs.size
+end
+
+services = []
+
+# Set up each job.
+setjobs = 0
+jobs.each do |job|
+
+  # Shorten some long variables for readability.
+  fqdn = job['fqdn']
+  sd = job['source-dir']
+  dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
+  suser = servernode['rdiff-backup']['server']['user']
+  maxchange = job['nagios']['max-change']
+  latestart = job['nagios']['max-late-start']
+  servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
+  nrpecheckname = "check_rdiff-backup_#{job['fqdn']}_#{sd.gsub("/", "-")}"
+
+  # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
+  directory dd do
+    owner suser
+    group suser
+    mode '775'
+    recursive true
+    action :create
+  end
+
+  # Set run times for each job, distributing them evenly across a certain time period every day.
+  job['minute'] = (minutesbetweenjobs * setjobs) % 60
+  job['hour'] = ((minutesbetweenjobs * setjobs / 60).floor + servernode['rdiff-backup']['server']['start-hour']) % 24
+  setjobs += 1
+
+  # Create the exclude files for each job.
+  directory File.join('/home', suser, 'exclude') do
+    owner suser
+    group suser
+    mode '775'
+    recursive true
+    action :create
+  end
+  template File.join('/home', suser, 'exclude', "#{fqdn}_#{sd.gsub("/", "-")}") do
+    source 'exclude.erb'
+    owner suser
+    group suser
+    mode '664'
+    variables({
+      :src => sd,
+      :paths => job['exclude-dirs'],
+    })
+    action :create
+  end
+
+  # Create scripts for each job.
+  directory File.join('/home', suser, 'scripts') do
+    owner suser
+    group suser
+    mode '775'
+    recursive true
+    action :create
+  end
+  template File.join('/home', suser, 'scripts', "#{fqdn}_#{sd.gsub("/", "-")}") do
+    source 'job.sh.erb'
+    owner suser
+    group suser
+    mode '774'
+    variables({
+      :fqdn => fqdn,
+      :src => sd,
+      :dest => dd,
+      :period => job['retention-period'],
+      :suser => suser,
+      :cuser => job['user'],
+      :port => job['ssh-port'],
+      :args => job['additional-args']
+    })
+    action :create
+  end
+  
+  # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
+  if servernode['rdiff-backup']['server']['nagios']['alerts'] and job['nagios']['alerts'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
+
+    latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
+    latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
+
+    newservice = {
+      'id' => servicename,
+      'command_line' => "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheckname}",
+      'host_name' => servernode['fqdn']
+    }
+    services << newservice
+
+    nagios_nrpecheck nrpecheckname do
+      command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff -r #{dd} -w #{latefinwarn} -c #{latefincrit} -l #{maxchange} -p #{latestart}"
+      action :add
+    end
+
+  end
+end
+
+# Set up Nagios remote attributes.
+node.set['nagios']['remote_services'] = services
+
+# Create the crontab for all the jobs.
+template CRON_FILE do
+  source 'cron.d.erb'
+  mode '644'
+  variables({
+    :shour => servernode['rdiff-backup']['server']['start-hour'],
+    :ehour => servernode['rdiff-backup']['server']['end-hour'],
+    :mailto => servernode['rdiff-backup']['server']['mailto'],
+    :suser => servernode['rdiff-backup']['server']['user'],
+    :jobs => jobs
+  })
+  action :create
+end
+
+# Create the log directory.
+directory LOG_DIR do
+  owner servernode['rdiff-backup']['server']['user']
+  group servernode['rdiff-backup']['server']['user']
+  mode '775'
+  recursive true
+  action :create
+end
+
+# Create a symlink to the log directory from the home directory.
+link File.join('/home', servernode['rdiff-backup']['server']['user'], 'logs') do
+  owner servernode['rdiff-backup']['server']['user']
+  group servernode['rdiff-backup']['server']['user']
+  mode '775'
+  link_type :symbolic
+  to LOG_DIR
+  action :create
+end
+
+# Remove all jobs that need to be removed.
+removejobs.each do |job|
+  remove_job(job, servernode)
 end

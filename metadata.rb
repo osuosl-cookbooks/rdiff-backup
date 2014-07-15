@@ -4,7 +4,14 @@ maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'
 description      'Installs/Configures rdiff-backup'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '0.2.3'
+version          '1.0.0'
 
-depends "sudo"
-depends "user"
+depends 'yum'
+depends 'yum-epel'
+depends 'user'
+depends 'partial_search'
+recommends 'sudo'
+recommends 'nagios'
+recommends 'nrpe'
+
+supports 'centos'
