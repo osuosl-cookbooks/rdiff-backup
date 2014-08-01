@@ -4,7 +4,7 @@
 
 # This script is normally run by cron, but can be run manually to start the job if it is not already running.
 
-PIDFILE=".`basename $0`.lock"
+PIDFILE=".${0}.lock"
 DIR=`dirname ${BASH_SOURCE[0]}`
 JOB=`basename ${0%%".sh"}`
 LOGPATH='/var/log/rdiff-backup'

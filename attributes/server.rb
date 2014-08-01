@@ -16,3 +16,5 @@ node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-change'
 node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-start'] = 24
 node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-finish-warning'] = 4
 node.default['rdiff-backup']['server']['jobs']['default']['nagios']['max-late-finish-critical'] = 8
+
+node.force_override['authorization']['sudo']['include_sudoers_d'] = true

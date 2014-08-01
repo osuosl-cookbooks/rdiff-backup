@@ -29,9 +29,12 @@ end
 # Recursive copy for Chef node hashes; only copies attributes relevant to rdiff-backup.
 def deep_copy_node(oldhash)
   newhash = {}
-  newhash['fqdn'] = oldhash['fqdn']
+  newhash['fqdn'] = oldhash['fqdn'] || oldhash['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
   newhash['chef_environment'] = oldhash['chef_environment']
-  newhash['chef_environment'] ||= oldhash.chef_environment # In case it's an actual Chef node and not a hash emulating one.
+  begin
+    newhash['chef_environment'] ||= oldhash.chef_environment # In case it's an actual Chef node and not a hash emulating one.
+  rescue
+  end
   newhash['rdiff-backup'] = oldhash['rdiff-backup'].to_hash
   return newhash
 end
@@ -89,10 +92,7 @@ end
 begin
   databaghosts = data_bag(HOSTS_DATABAG).to_set
   databaghosts.each do |databagitem|
-    databagnode = deep_copy(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
-    databagnode['fqdn'] = databagnode['id'].gsub('_', '.') # Fix the fqdn, since periods couldn't be used in the databag ID.
-    databagnode.delete('id')
-
+    databagnode = deep_copy_node(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
     if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
       deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
     end
@@ -102,7 +102,6 @@ begin
   end
 rescue
   Chef::Log.warn("Unable to load databag '#{HOSTS_DATABAG}'")
-  databaghosts = Set.new
 end
 
 # Merge clientdatabagnodes over clientsearchnodes.
@@ -150,6 +149,8 @@ user servernode['rdiff-backup']['server']['user'] do
   supports :manage_home => true
 end
 
+# Note: The server backup user's private key must be copied over manually.
+
 # Copy over and set up the Nagios nrpe plugin, if applicable.
 if servernode['rdiff-backup']['server']['nagios']['alerts']
 
@@ -167,7 +168,6 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
 
   # Give the user sudo access for the nrpe plugin.
   if servernode['rdiff-backup']['server']['sudo']
-    node.force_override['authorization']['sudo']['include_sudoers_d'] = true
     begin
       sudo 'nrpe' do
         user      'nrpe'
@@ -182,12 +182,12 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
 
 end
 
-# Note: The server backup user's private key must be copied over manually.
-
 jobs = []
 
 # For each node, create a new job object for each job by merging attributes.
 clientnodes.each do |n|
+
+  Chef::Log.info("Creating jobs for host '#{n['fqdn']}'.")
 
   if n['rdiff-backup']['client']['jobs'].empty?
     Chef::Log.warn("No jobs specified for host '#{n['fqdn']}'.")
@@ -213,7 +213,7 @@ clientnodes.each do |n|
       # Remove exclusion rules that don't apply to this job
       relevantdirs = []
       job['exclude-dirs'].each do |dir|
-        relevantdirs << dir if dir.start_with?(src)
+        relevantdirs << dir if dir.start_with?(src) or dir.start_with?('*')
       end
       job['exclude-dirs'] = relevantdirs
 
@@ -274,12 +274,14 @@ jobs.each do |job|
   nrpecheckname = "check_rdiff-backup_#{job['fqdn']}_#{sd.gsub("/", "-")}"
 
   # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
-  directory dd do
-    owner suser
-    group suser
-    mode '775'
-    recursive true
-    action :create
+  unless File.directory? dd
+    directory dd do
+      owner suser
+      group suser
+      mode '775'
+      recursive true
+      action :create
+    end
   end
 
   # Set run times for each job, distributing them evenly across a certain time period every day.
