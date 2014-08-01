@@ -62,6 +62,9 @@ def remove_job(job, servernode)
   File.delete(excludepath) if File.exists?(excludepath)
   scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
   File.delete(scriptpath) if File.exists?(scriptpath)
+  nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
+    action :remove
+  end
 end
 
 # Find nodes to back up by searching.
