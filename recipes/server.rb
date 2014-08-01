@@ -257,7 +257,9 @@ jobs.sort! {|a,b| a['fqdn']+a['source-dir'] <=> b['fqdn']+b['source-dir'] }
 
 # Figure out how much time to wait between starting jobs.
 unless jobs.empty?
-  minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60 ) / jobs.size
+  minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60.0 ) / jobs.size
+  puts "DEBUG: jobs.size: #{jobs.size}"
+  puts "DEBUG: minutesbetweenjobs: #{minutesbetweenjobs}"
 end
 
 services = []
