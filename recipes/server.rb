@@ -246,8 +246,8 @@ if File.exists?(CRON_FILE)
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
-        newjob['fqdn'] = line.gsub(/.*\/(.*)_.*/, '\1').strip
-        newjob['source-dir'] = line.split('_')[-1].strip
+        newjob['fqdn'] = line.gsub(/.*\/(.*?)_.*/, '\1').strip
+        newjob['source-dir'] = line.split('_', 2)[-1].strip
         existingjobs << newjob
       end
     end
