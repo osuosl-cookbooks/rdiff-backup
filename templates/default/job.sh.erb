@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# rdiff-backup job script for <%= @fqdn %>:<%= @src %> managed by Chef. Changes will be overwritten.
+# rdiff-backup job script for $JOB managed by Chef. Changes will be overwritten.
 
 # This script is normally run by cron, but can be run manually to start the job if it is not already running.
 
@@ -31,29 +31,33 @@ else
 
     echo '----------------------------------------' | log
 
-    echo 'Backup starting for "<%= @fqdn %>:<%= @src %>"...' | logboth
+    echo "Backup starting for '$JOB'..." | logboth
     rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files \
       --exclude-fifos --exclude-sockets --exclude-other-filesystems \
       --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
       --remote-schema 'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @cuser %>@<%= @fqdn %>::<%= @src %>' '<%= @dest %>' 2>&1 | log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
-      echo 'Backup complete for "<%= @fqdn %>:<%= @src %>".' | logboth
+      echo "Backup complete for '$JOB'." | logboth
     else
-      echo 'Backup failed for "<%= @fqdn %>:<%= @src %>".' | logboth
+      if [ -d <%= @dest %>/rdiff-backup-data ]; then
+        echo "Backup failed for '$JOB'." | logboth
+      else
+        echo "First backup failed for '$JOB'." | logboth
+      fi
     fi
 
-    echo 'Purging backups older than <%= @period %> for "<%= @fqdn %>:<%= @src %>"...' | logboth
+    echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
     rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
-      echo 'Purge complete for "<%= @fqdn %>:<%= @src %>".' | logboth
+      echo "Purge complete for '$JOB'." | logboth
     else
-      echo 'Purge failed for "<%= @fqdn %>:<%= @src %>".' | logboth
+      echo "Purge failed for '$JOB'." | logboth
     fi
 
     rm $PIDFILE
 
   else
-    echo 'Job already running for "<%= @fqdn %>:<%= @src %>"; terminating.' | logboth
+    echo "Job already running for '$JOB'; terminating." | logboth
   fi
 
 fi

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+LOG='/var/log/rdiff-backup/previous.log'
+
+TOTAL=`grep 'Backup starting' $LOG | wc -l`
+SUCC=`grep 'Backup complete' $LOG | wc -l`
+NORMFAIL=`grep 'Backup failed' $LOG | wc -l`
+FIRSTFAIL=`grep 'First backup failed' $LOG | wc -l`
+
+read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`"
+
+if [ $NORMFAIL -eq 0 -a $FIRSTFAIL -eq 0 ]; then
+  MESSAGE="OK: $SUCC/$TOTAL backup(s) succeeded"
+elif [ $NORMFAIL -ne 0 -a $FIRSTFAIL -eq 0 ]; then
+  MESSAGE="OK: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed"
+elif [ $NORMFAIL -eq 0 -a $FIRSTFAIL -ne 0 ]; then
+  MESSAGE="CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $FIRSTFAIL first backup(s) failed: "
+  for JOB in ${JOBS[@]}; do
+    if [ `grep $JOB $LOG | grep 'First backup failed' | wc -l` -ne 0 ]; then
+      MESSAGE="$MESSAGE $JOB"
+    fi
+  done
+else
+  MESSAGE="CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed; $FIRSTFAIL first backup(s) failed"
+fi
+
+echo $MESSAGE

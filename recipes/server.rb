@@ -157,7 +157,7 @@ end
 # Copy over and set up the Nagios nrpe plugin, if applicable.
 if servernode['rdiff-backup']['server']['nagios']['alerts']
 
-  # Copy over the check_rdiff nrpe plugin.
+  # Copy over the check_rdiff and check_rdiff_log nrpe plugins.
   directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
     mode '775'
     recursive true
@@ -168,15 +168,20 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
     mode '775'
     action :create
   end
+  cookbook_file File.join(servernode['rdiff-backup']['server']['nagios']['plugin-dir'], 'check_rdiff_log') do
+    source File.join('nagios', 'plugins', 'check_rdiff_log')
+    mode '775'
+    action :create
+  end
 
-  # Give the user sudo access for the nrpe plugin.
+  # Give the user sudo access for the nrpe plugins.
   if servernode['rdiff-backup']['server']['sudo']
     begin
       sudo 'nrpe' do
         user      'nrpe'
         runas     'root'
         nopasswd  true
-        commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff')]
+        commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff'), File.join(node['nagios']['plugin_dir'], 'check_rdiff_log')]
       end
     rescue
       Chef::Log.warn("Unable to provide sudo access to nrpe user 'nrpe'")
@@ -358,6 +363,29 @@ jobs.each do |job|
       action :add
     end
 
+  end
+end
+
+# If nagios alerts are enabled, create the log check alert.
+if servernode['rdiff-backup']['server']['nagios']['alerts']
+
+  servicename = 'rdiff-backup_log'
+  nrpecheckname = 'check_rdiff-backup_log'
+
+  newservice = {
+    'id' => servicename,
+    'command_line' => "$USER1$/check_nrpe -H $HOSTADDRESS$ -c #{nrpecheckname}",
+    'host_name' => servernode['fqdn']
+  }
+  services << newservice
+
+  nagios_nrpecheck nrpecheckname do
+    command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff_log"
+    action :add
+  end
+else
+  nagios_nrpecheck nrpecheckname do
+    action :remove
   end
 end
 
