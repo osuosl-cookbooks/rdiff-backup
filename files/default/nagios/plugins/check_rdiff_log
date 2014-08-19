@@ -10,9 +10,9 @@ FIRSTFAIL=`grep 'First backup failed' $LOG | wc -l`
 read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`"
 
 if [ $NORMFAIL -eq 0 -a $FIRSTFAIL -eq 0 ]; then
-  MESSAGE="OK: $SUCC/$TOTAL backup(s) succeeded"
+  echo "OK: $SUCC/$TOTAL backup(s) succeeded"
 elif [ $NORMFAIL -ne 0 -a $FIRSTFAIL -eq 0 ]; then
-  MESSAGE="OK: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed"
+  echo "OK: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed"
 elif [ $NORMFAIL -eq 0 -a $FIRSTFAIL -ne 0 ]; then
   MESSAGE="CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $FIRSTFAIL first backup(s) failed: "
   for JOB in ${JOBS[@]}; do
@@ -20,8 +20,9 @@ elif [ $NORMFAIL -eq 0 -a $FIRSTFAIL -ne 0 ]; then
       MESSAGE="$MESSAGE $JOB"
     fi
   done
+  echo $MESSAGE
+  exit 2
 else
-  MESSAGE="CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed; $FIRSTFAIL first backup(s) failed"
+  echo "CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed; $FIRSTFAIL first backup(s) failed"
+  exit 2
 fi
-
-echo $MESSAGE
