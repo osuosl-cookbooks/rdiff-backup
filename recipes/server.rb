@@ -423,6 +423,23 @@ link File.join('/home', servernode['rdiff-backup']['server']['user'], 'logs') do
   action :create
 end
 
+# Give the server user sudo access for su-ing to the rdiff-backup-client user in case the server is also a client.
+if servernode['rdiff-backup']['server']['sudo']
+  node.force_override['authorization']['sudo']['include_sudoers_d'] = true
+  user = servernode['rdiff-backup']['server']['user']
+  begin
+    sudo user do
+      user      user
+      runas     servernode['rdiff-backup']['client']['user']
+      nopasswd  true
+      commands  ['/usr/bin/sudo rdiff-backup --server --restrict-read-only /']
+      defaults  ['!requiretty']
+    end
+  rescue
+    Chef::Log.warn("Unable to provide sudo access to rdiff-backup user '#{user}'")
+  end
+end
+
 # Remove all jobs that need to be removed.
 removejobs.each do |job|
   remove_job(job, servernode)
