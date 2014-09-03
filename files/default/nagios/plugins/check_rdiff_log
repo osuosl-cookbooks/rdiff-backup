@@ -1,28 +1,71 @@
 #!/bin/bash
 
-LOG='/var/log/rdiff-backup/previous.log'
+read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`" # Array of all jobs
 
-TOTAL=`grep 'Backup starting' $LOG | wc -l`
-SUCC=`grep 'Backup complete' $LOG | wc -l`
-NORMFAIL=`grep 'Backup failed' $LOG | wc -l`
-FIRSTFAIL=`grep 'First backup failed' $LOG | wc -l`
+TOTAL=${#JOBS[@]}
+SUCC=0
+NORMFAIL=0
+FIRSTFAIL=0
+MISSING=0
 
-read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`"
+LOGS=`ls /var/log/rdiff-backup/general/* | tail -n 2 | xargs` # Last 2 logs
 
-if [ $NORMFAIL -eq 0 -a $FIRSTFAIL -eq 0 ]; then
-  echo "OK: $SUCC/$TOTAL backup(s) succeeded"
-elif [ $NORMFAIL -ne 0 -a $FIRSTFAIL -eq 0 ]; then
-  echo "OK: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed"
-elif [ $NORMFAIL -eq 0 -a $FIRSTFAIL -ne 0 ]; then
-  MESSAGE="CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $FIRSTFAIL first backup(s) failed: "
-  for JOB in ${JOBS[@]}; do
-    if [ `grep $JOB $LOG | grep 'First backup failed' | wc -l` -ne 0 ]; then
-      MESSAGE="$MESSAGE $JOB"
-    fi
+for JOB in ${JOBS[@]}; do
+  JOBSTATUS=`grep $JOB $LOGS | grep -Ei 'backup (complete|failed)' | tail -n 1`
+  if [ `echo $JOBSTATUS | grep -q 'Backup complete'; echo $?` -eq 0 ]; then
+    SUCC=`expr $SUCC + 1`;
+  elif [ `echo $JOBSTATUS | grep -q 'Backup failed'; echo $?` -eq 0 ]; then
+    NORMFAILJOBS[$NORMFAIL]=$JOB
+    NORMFAIL=`expr $NORMFAIL + 1`;
+  elif [ `echo $JOBSTATUS | grep -q 'First backup failed'; echo $?` -eq 0 ]; then
+    FIRSTFAILJOBS[$FIRSTFAIL]=$JOB
+    FIRSTFAIL=`expr $FIRSTFAIL + 1`;
+  else
+    MISSINGJOBS[$MISSING]=$JOB
+    MISSING=`expr $MISSING + 1`;
+    echo Missing job: $JOB
+  fi
+done
+
+echo total: $TOTAL
+echo succ: $SUCC
+echo normfail: $NORMFAIL
+echo firstfail: $FIRSTFAIL
+echo missing: $MISSING
+
+MESSAGE="$SUCC/$TOTAL backup(s) succeeded"
+if [ $TOTAL -eq $SUCC ]; then
+  STATUS="OK:"
+fi
+if [ $MISSING -ne 0 ]; then
+  STATUS="WARNING:"
+  MESSAGE="${MESSAGE}; $MISSING backup(s) are missing ( "
+  for MISSINGJOB in ${MISSINGJOBS[@]}; do
+    MESSAGE="${MESSAGE}${MISSINGJOB} "
   done
-  echo $MESSAGE
-  exit 2
+  MESSAGE="${MESSAGE})"
+fi
+if [ $NORMFAIL -ne 0 ]; then
+  STATUS="OK:"
+  MESSAGE="${MESSAGE}; $NORMFAIL existing backup(s) failed ( "
+  for NORMFAILJOB in ${NORMFAILJOBS[@]}; do
+    MESSAGE="${MESSAGE}${NORMFAILJOB} "
+  done
+  MESSAGE="${MESSAGE})"
+fi
+if [ $FIRSTFAIL -ne 0 ]; then
+  STATUS="CRITICAL:"
+  MESSAGE="${MESSAGE}; $FIRSTFAIL first backup(s) failed ( "
+  for FIRSTFAILJOB in ${FIRSTFAILJOBS[@]}; do
+    MESSAGE="${MESSAGE}${FIRSTFAILJOB} "
+  done
+  MESSAGE="${MESSAGE})"
+fi
+echo "$STATUS $MESSAGE"
+if [ $STATUS = "OK:" ]; then
+  exit 0
+elif [ $STATUS = "WARNING:" ]; then
+  exit 1
 else
-  echo "CRITICAL: $SUCC/$TOTAL backup(s) succeeded; $NORMFAIL existing backup(s) failed; $FIRSTFAIL first backup(s) failed"
   exit 2
 fi
