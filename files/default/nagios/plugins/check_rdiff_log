@@ -2,15 +2,24 @@
 
 read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`" # Array of all jobs
 
+# Backup jobs
 TOTAL=${#JOBS[@]}
 SUCC=0
 NORMFAIL=0
 FIRSTFAIL=0
 MISSING=0
 
+# Purges
+PTOTAL=${#JOBS[@]}
+PSUCC=0
+PFAIL=0
+PMISSING=0
+
 LOGS=`ls /var/log/rdiff-backup/general/* | tail -n 2 | xargs` # Last 2 logs
 
 for JOB in ${JOBS[@]}; do
+
+  # Backup jobs
   JOBSTATUS=`grep $JOB $LOGS | grep -Ei 'backup (complete|failed)' | tail -n 1`
   if [ `echo $JOBSTATUS | grep -q 'Backup complete'; echo $?` -eq 0 ]; then
     SUCC=`expr $SUCC + 1`;
@@ -23,20 +32,28 @@ for JOB in ${JOBS[@]}; do
   else
     MISSINGJOBS[$MISSING]=$JOB
     MISSING=`expr $MISSING + 1`;
-    echo Missing job: $JOB
+  fi
+
+  # Purges
+  JOBSTATUS=`grep $JOB $LOGS | grep -Ei 'purge (complete|failed)' | tail -n 1`
+  if [ `echo $JOBSTATUS | grep -q 'Purge complete'; echo $?` -eq 0 ]; then
+    PSUCC=`expr $PSUCC + 1`;
+  elif [ `echo $JOBSTATUS | grep -q 'Purge failed'; echo $?` -eq 0 ]; then
+    PFAILJOBS[$PFAIL]=$JOB
+    PFAIL=`expr $PFAIL + 1`;
+  else
+    PMISSINGJOBS[$PMISSING]=$JOB
+    PMISSING=`expr $PMISSING + 1`;
   fi
 done
 
-echo total: $TOTAL
-echo succ: $SUCC
-echo normfail: $NORMFAIL
-echo firstfail: $FIRSTFAIL
-echo missing: $MISSING
-
+STATUS="UNKNOWN:"
 MESSAGE="$SUCC/$TOTAL backup(s) succeeded"
-if [ $TOTAL -eq $SUCC ]; then
+if [ $TOTAL -eq $SUCC -a $PTOTAL -eq $PSUCC ]; then
   STATUS="OK:"
 fi
+
+# Backup jobs
 if [ $MISSING -ne 0 ]; then
   STATUS="WARNING:"
   MESSAGE="${MESSAGE}; $MISSING backup(s) are missing ( "
@@ -61,6 +78,25 @@ if [ $FIRSTFAIL -ne 0 ]; then
   done
   MESSAGE="${MESSAGE})"
 fi
+
+# Purges
+if [ $PMISSING -ne 0 ]; then
+  STATUS="WARNING:"
+  MESSAGE="${MESSAGE}; $PMISSING purge(s) are missing ( "
+  for PMISSINGJOB in ${PMISSINGJOBS[@]}; do
+    MESSAGE="${MESSAGE}${PMISSINGJOB} "
+  done
+  MESSAGE="${MESSAGE})"
+fi
+if [ $PFAIL -ne 0 ]; then
+  STATUS="CRITICAL:"
+  MESSAGE="${MESSAGE}; $PFAIL purge(s) failed ( "
+  for PFAILJOB in ${PFAILJOBS[@]}; do
+    MESSAGE="${MESSAGE}${PFAILJOB} "
+  done
+  MESSAGE="${MESSAGE})"
+fi
+
 echo "$STATUS $MESSAGE"
 if [ $STATUS = "OK:" ]; then
   exit 0
