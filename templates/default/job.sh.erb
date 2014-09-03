@@ -18,7 +18,7 @@ function log() {
 
 # Prepends date to every line of stdin, then writes to stdout and both the individual and general log files.
 function logboth() {
-  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log" -P "${LOGPATH}/previous.log")
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log")
 }
 
 # If we're root instead of the rdiff-backup server user, rerun the script as it.
