@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -d ' ' -a JOBS <<< "`ls /home/rdiff-backup-server/scripts`" # Array of all jobs
+read -d ' ' -a JOBS <<< "`ls -c /home/rdiff-backup-server/scripts`" # Array of all jobs
 
 # Note: We manage the failure of new jobs differently than the failure of other
 # jobs because the rdiff-backup cookbook does not create Nagios checks for jobs
