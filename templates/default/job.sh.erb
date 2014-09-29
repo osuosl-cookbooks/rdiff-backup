@@ -33,8 +33,8 @@ else
     echo '----------------------------------------' | log
 
     echo "Backup starting for '$JOB'..." | logboth
-    rdiff-backup <%= @args %> --force --create-full-path --exclude-device-files \
-      --exclude-fifos --exclude-sockets --exclude-other-filesystems \
+    rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
+      --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems \
       --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
       --remote-schema \
       <% if node['fqdn'] == @fqdn %>
