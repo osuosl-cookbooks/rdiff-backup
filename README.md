@@ -144,10 +144,13 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 
 To set the default retention period for all jobs:
 * `node['rdiff-backup']['server']['jobs']['']['retention-period'] = '3M'`
+
 To set the retention period for all `/etc` jobs, overriding the default:
 * `node['rdiff-backup']['server']['jobs']['/etc']['retention-period'] = '2W'`
+
 To set the retention period for all MySQL jobs:
 * `node['rdiff-backup']['server']['mysql-jobs']['']['retention-period'] = '2W'`
+
 To set the retention period for all MySQL jobs with databases named `drupal`, overriding the default:
 * `node['rdiff-backup']['server']['mysql-jobs']['drupal']['retention-period'] = '10D'`
 
