@@ -28,7 +28,7 @@ PSUCC=0             # Number of jobs whose last purge succeeded.
 PFAIL=0             # Number of jobs whose last purge failed.
 PMISSING=0          # Number of jobs whose last purge did not finish at all.
 
-LOGS=`ls -c /var/log/rdiff-backup/general/* | tail -n 2 | xargs` # Last 2 logs
+LOGS=`ls /var/log/rdiff-backup/general/* | tail -n 2 | xargs` # Last 2 logs
 
 for JOB in ${JOBS[@]}; do
 
