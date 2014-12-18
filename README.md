@@ -127,7 +127,7 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 * `['<jobs|mysql-jobs>']['']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `['<jobs|mysql-jobs>']['']['additional-args']` - String of additional arguments to pass to rdiff-backup, default ""
 * `['<jobs|mysql-jobs>']['']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
-* `['<jobs|mysql-jobs>']['']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 1024
+* `['<jobs|mysql-jobs>']['']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 8192
 * `['<jobs|mysql-jobs>']['']['nagios']['max-late-start']` - How late (in hours) the job can start before a critical alert is sent, default 2
 * `['<jobs|mysql-jobs>']['']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
 * `['<jobs|mysql-jobs>']['']['nagios']['max-late-finish-critical']` - How long (in hours) the job can run before a critical alert is sent, default 8
