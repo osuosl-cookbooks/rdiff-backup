@@ -89,11 +89,11 @@ All starting with `node['rdiff-backup']['server']`:
 
 ### Filesystem Attributes:
 
-* `['jobs']` - Map of jobs to run for all clients, where each key is a source dir to back up (or '' to set defaults) and each value is a hash of attributes specific to that job, defaults below
+* `['jobs']` - Map of jobs to run for all clients, where each key is a source dir to back up (or `''` to set defaults) and each value is a hash of attributes specific to that job, defaults below
 
 ### MySQL Attributes:
 
-* `['mysql-jobs']` - Map of jobs to run for all clients, where each key is a database to back up (or '' to set defaults) and each value is a hash of attributes specific to that job, defaults below
+* `['mysql-jobs']` - Map of jobs to run for all clients, where each key is a database to back up (or `''` to set defaults) and each value is a hash of attributes specific to that job, defaults below
 
 ## Client Attributes:
 
@@ -106,19 +106,19 @@ All starting with `node['rdiff-backup']['client']`:
 
 ### Filesystem Attributes:
 
-* `['jobs']` - Map of jobs to run for a particular client, where each key is a source dir to back up (or '' to set defaults) and each value is a hash of attributes specific to that job, default empty
+* `['jobs']` - Map of jobs to run for a particular client, where each key is a source dir to back up (or `''` to set defaults) and each value is a hash of attributes specific to that job, default empty
 
 ### MySQL Attributes:
 
-* `['mysql-jobs']` - Map of jobs to run for a particular client, where each key is a database to back up (or '' to set defaults) and each value is a hash of attributes specific to that job, default empty
+* `['mysql-jobs']` - Map of jobs to run for a particular client, where each key is a database to back up (or `''` to set defaults) and each value is a hash of attributes specific to that job, default empty
 * `['mysql-all']` - If true, will dump entire MySQL server using `--all-databases` using defaults specified in `['mysql-jobs']['']` and ignoring other any keys in `['mysql-jobs']`, default "true"
 
 ## Job Attributes:
 
 Job attributes may be set on either the server or the client.  When the blank
-job ('') is set, those values will be used as the defaults for all jobs.
+job (`''`) is set, those values will be used as the defaults for all jobs.
 Client attributes override server attributes, and job-specific attributes (i.e.
-for a job other than '') override both.
+for a job other than `''`) override both.
 
 All starting with `node['rdiff-backup']['<server|client>']`:
 
@@ -191,9 +191,9 @@ overriding earlier ones:
 
 In general, it may be easier to remember that databag attributes override node
 attributes, client attributes override server attributes, and job-specific
-attributes override default ('') job attributes.  It is also possible to simply
-ignore most of the order and set up backups entirely through one level, such as
-entirely through roles or entirely through databags.
+attributes override default (`''`) job attributes.  It is also possible to
+simply ignore most of the order and set up backups entirely through one level,
+such as entirely through roles or entirely through databags.
 
 Usage
 -----
