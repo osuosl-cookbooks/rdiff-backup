@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: rdiff-backup
-# Recipe:: client
+# Recipe:: client-mysql
 #
 # Copyright 2014, Oregon State University
 #
@@ -17,4 +17,4 @@
 # limitations under the License.
 #
 
-include_recipe "rdiff-backup::client-filesystem"
+include_recipe "rdiff-backup::client-base"
