@@ -58,13 +58,20 @@ clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
 
 # Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
-  excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', "#{job['fqdn']}_#{job['source-dir']}")
-  File.delete(excludepath) if File.exists?(excludepath)
-  scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
-  File.delete(scriptpath) if File.exists?(scriptpath)
-  nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
-    action :remove
+  if job['type'] == 'fs'
+    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
+    excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', "#{job['fqdn']}_#{job['source-dir']}")
+    File.delete(excludepath) if File.exists?(excludepath)
+    nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
+      action :remove
+    end
+  elsif job['type'] == 'mysql'
+    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
+    nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
+      action :remove
+    end
   end
+  File.delete(scriptpath) if File.exists?(scriptpath)
 end
 
 # Find nodes to back up by searching.
@@ -201,36 +208,56 @@ jobs = []
 clientnodes.each do |n|
 
   Chef::Log.info("Creating jobs for host '#{n['fqdn']}'.")
-
-  if n['rdiff-backup']['client']['jobs'].empty?
-    Chef::Log.warn("No jobs specified for host '#{n['fqdn']}'.")
-  end
   
   srcs = Set.new
-  srcs.merge(servernode['rdiff-backup']['server']['jobs'].keys)
-  srcs.merge(n['rdiff-backup']['client']['jobs'].keys)
-  srcs.each do |src|
-    if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
+  if servernode['rdiff-backup']['server']['fs']['enable'] and n['rdiff-backup']['client']['fs']['enable']
+    srcs.merge(servernode['rdiff-backup']['server']['fs']['jobs'].keys)
+    srcs.merge(n['rdiff-backup']['client']['fs']['jobs'].keys)
+    srcs.each do |src|
+      if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
 
-      job = deep_copy(servernode['rdiff-backup']['server']['jobs']['default']) # Start with the server's default attributes. (Levels 1, 2, and 3)
-      deep_merge!(job, n['rdiff-backup']['client']['jobs']['default'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
-      deep_merge!(job, servernode['rdiff-backup']['server']['jobs'][src] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
-      deep_merge!(job, n['rdiff-backup']['client']['jobs'][src] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
+        job = deep_copy(servernode['rdiff-backup']['server']['fs']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+        deep_merge!(job, n['rdiff-backup']['client']['fs']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
+        deep_merge!(job, servernode['rdiff-backup']['server']['fs']['jobs'][src] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
+        deep_merge!(job, n['rdiff-backup']['client']['fs']['jobs'][src] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
 
+        job['type'] = 'fs'
+        # Keep higher-level attributes in the job object for convenience.
+        job['source-dir'] = src
+        job['fqdn'] = n['fqdn']
+        #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
+        job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
+        job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
+
+        # Remove exclusion rules that don't apply to this job
+        relevantdirs = []
+        job['exclude-dirs'].each do |dir|
+          relevantdirs << dir if dir.start_with?(src) or dir.start_with?('*')
+        end
+        job['exclude-dirs'] = relevantdirs
+
+        jobs << job
+      end
+    end
+  end
+
+  mysqldbs = Set.new
+  if servernode['rdiff-backup']['server']['mysql']['enable'] and n['rdiff-backup']['client']['mysql']['enable']
+    mysqldbs.merge(servernode['rdiff-backup']['server']['mysql']['jobs'].keys)
+    mysqldbs.merge(n['rdiff-backup']['client']['mysql']['jobs'].keys)
+    mysqldbs.each do |db|
+      job = deep_copy(servernode['rdiff-backup']['server']['mysql']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
+      deep_merge!(job, n['rdiff-backup']['client']['mysql']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
+      deep_merge!(job, servernode['rdiff-backup']['server']['mysql']['jobs'][db] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
+      deep_merge!(job, n['rdiff-backup']['client']['mysql']['jobs'][db] || {}) # Merge the client's job-specific attributes over the top. (Levels 8 and 9)
+
+      job['type'] = 'mysql'
       # Keep higher-level attributes in the job object for convenience.
-      job['source-dir'] = src
+      job['db'] = db
       job['fqdn'] = n['fqdn']
+      #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
       job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
       job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
-
-      # Remove exclusion rules that don't apply to this job
-      relevantdirs = []
-      job['exclude-dirs'].each do |dir|
-        relevantdirs << dir if dir.start_with?(src) or dir.start_with?('*')
-      end
-      job['exclude-dirs'] = relevantdirs
-
-      jobs << job
     end
   end
 end
@@ -240,7 +267,11 @@ specifiedjobs = Set.new
 jobs.each do |job|
   newjob = {} # Create a new "bare" job with just enough information to identify it.
   newjob['fqdn'] = job['fqdn']
-  newjob['source-dir'] = job['source-dir'].gsub("/", "-")
+  if job['type'] == 'fs'
+    newjob['source-dir'] = job['source-dir'].gsub("/", "-")
+  elsif job['type'] == 'mysql'
+    newjob['db'] = job['db']
+  end
   specifiedjobs << newjob
 end
 
@@ -251,8 +282,14 @@ if File.exists?(CRON_FILE)
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
-        newjob['fqdn'] = line.gsub(/.*\/(.*?)_.*/, '\1').strip
-        newjob['source-dir'] = line.split('_', 2)[-1].strip
+        matches = line.match(/.*\/(mysql_)?(.*?)_(.*/))
+        if matches[0] == 'mysql_'
+          newjob['fqdn'] = matches[1]
+          newjob['db'] = matches[2]
+        else
+          newjob['fqdn'] = matches[0]
+          newjob['source-dir'] = matches[1]
+        end
         existingjobs << newjob
       end
     end
