@@ -83,7 +83,7 @@ All starting with `node['rdiff-backup']['server']`:
 * `['end-hour']` - Latest hour of the day to schedule jobs, default "23"
 * `['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
 * `['mailto']` - The email address(es) (comma delimited) to mail cron reports to, default "" (no mail is sent)
-* `['nagios']['alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
+* `['nagios']['enable-alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
 * `['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
 * `['user']` - User to run backups with on the server side, default "rdiff-backup-server"
 
@@ -130,7 +130,7 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 * `['<fs-jobs|mysql-jobs>']['']['destination-dir']` - Location to store backups on the server side, default "/data/rdiff-backup"
 * `['<fs-jobs|mysql-jobs>']['']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `['<fs-jobs|mysql-jobs>']['']['additional-args']` - String of additional arguments to pass to rdiff-backup, default ""
-* `['<fs-jobs|mysql-jobs>']['']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
+* `['<fs-jobs|mysql-jobs>']['']['nagios']['enable-alerts']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
 * `['<fs-jobs|mysql-jobs>']['']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 8192
 * `['<fs-jobs|mysql-jobs>']['']['nagios']['max-late-start']` - How late (in hours) the job can start before a critical alert is sent, default 2
 * `['<fs-jobs|mysql-jobs>']['']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
