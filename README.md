@@ -148,7 +148,7 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 
 ### Filesystem Attributes:
 
-* `['fs']['job-defaults']['exclude-dirs']` - A set of files and directories not to ignore (not back up), default empty
+* `['fs']['job-defaults']['exclude-dirs']` - A set of files and directories to ignore (not back up), default empty
 
 ### MySQL Attributes:
 
