@@ -28,7 +28,7 @@ else
 
   # Only run if this script isn't already running
   if [ $INSTANCES -lt 3 ]; then
-    echo $$ > $PIDFILE
+    echo $$ > $PIDFILE 2> >(log)
 
     echo '----------------------------------------' | log
 
@@ -61,7 +61,7 @@ else
       echo "Purge failed for '$JOB'." | logboth
     fi
 
-    rm $PIDFILE
+    rm $PIDFILE 2>&1 | log
 
   else
     echo "Job already running for '$JOB'; terminating." | logboth
