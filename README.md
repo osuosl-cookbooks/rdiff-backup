@@ -97,7 +97,7 @@ All starting with `node['rdiff-backup']['server']`:
 
 ### MySQL Attributes:
 
-* `['mysql']['enable']` - Whether to perform MySQL backups of clients by default, default "true" (must be enabled for any mysql backups to run)
+* `['mysql']['enable']` - Whether to perform MySQL backups of clients, default "true" (must be enabled for any mysql backups to run)
 * `['mysql']['job-defaults']` - Map of job attributes to use as the defaults for all MySQL jobs running on the server, defaults below
 * `['mysql']['jobs']` - Map of jobs to run for all clients, where each key is the name of a MySQL database to back up and each value is a map of job attributes specific to all jobs of the same name (MySQL database name) running on the server, defaults below
 
