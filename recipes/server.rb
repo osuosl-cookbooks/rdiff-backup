@@ -282,7 +282,7 @@ if File.exists?(CRON_FILE)
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
-        matches = line.match(/.*\/(mysql_)?(.*?)_(.*/))
+        matches = line.match(/.*\/(mysql_)?(.*?)_(.*)/)
         if matches[0] == 'mysql_'
           newjob['fqdn'] = matches[1]
           newjob['db'] = matches[2]
