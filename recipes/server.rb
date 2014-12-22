@@ -314,14 +314,32 @@ setjobs = 0
 jobs.each do |job|
 
   # Shorten some long variables for readability.
+  type = job['type']
   fqdn = job['fqdn']
-  sd = job['source-dir']
-  dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
   suser = servernode['rdiff-backup']['server']['user']
   maxchange = job['nagios']['max-change']
   latestart = job['nagios']['max-late-start']
-  servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
-  nrpecheckname = "check_rdiff-backup_#{job['fqdn']}_#{sd.gsub("/", "-")}"
+  if type == 'fs'
+    sd = job['source-dir']
+    dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
+    name = "#{job['fqdn']}_#{sd.gsub("/", "-")}"
+    servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
+    nrpecheckname = "check_rdiff-backup_#{name}"
+  elsif type == 'mysql'
+    if job['all-databases']
+      db = 'all-databases'
+      tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, 'all-databases')
+      dd = File.join(job['destination-dir'], 'mysql', fqdn, 'all-databases')
+      name = "mysql_#{job['fqdn']}_#{db}"
+    else
+      db = job['db']
+      tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, 'databases', db)
+      dd = File.join(job['destination-dir'], 'mysql', fqdn, 'databases', db)
+      name = "mysql_#{job['fqdn']}_db_#{db}"
+    end
+    servicename = "rdiff-backup_#{name}"
+    nrpecheckname = "rdiff-backup_#{name}"
+  end
 
   # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
   unless File.directory? dd
@@ -340,23 +358,25 @@ jobs.each do |job|
   setjobs += 1
 
   # Create the exclude files for each job.
-  directory File.join('/home', suser, 'exclude') do
-    owner suser
-    group suser
-    mode '775'
-    recursive true
-    action :create
-  end
-  template File.join('/home', suser, 'exclude', "#{fqdn}_#{sd.gsub("/", "-")}") do
-    source 'exclude.erb'
-    owner suser
-    group suser
-    mode '664'
-    variables({
-      :src => sd,
-      :paths => job['exclude-dirs'],
-    })
-    action :create
+  if type == 'fs'
+    directory File.join('/home', suser, 'exclude') do
+      owner suser
+      group suser
+      mode '775'
+      recursive true
+      action :create
+    end
+    template File.join('/home', suser, 'exclude', name) do
+      source 'exclude.erb'
+      owner suser
+      group suser
+      mode '664'
+      variables({
+        :src => sd,
+        :paths => job['exclude-dirs'],
+      })
+      action :create
+    end
   end
 
   # Create scripts for each job.
@@ -367,22 +387,43 @@ jobs.each do |job|
     recursive true
     action :create
   end
-  template File.join('/home', suser, 'scripts', "#{fqdn}_#{sd.gsub("/", "-")}") do
-    source 'job.sh.erb'
-    owner suser
-    group suser
-    mode '774'
-    variables({
-      :fqdn => fqdn,
-      :src => sd,
-      :dest => dd,
-      :period => job['retention-period'],
-      :suser => suser,
-      :cuser => job['user'],
-      :port => job['ssh-port'],
-      :args => job['additional-args']
-    })
-    action :create
+  if type == 'fs'
+    template File.join('/home', suser, 'scripts', name) do
+      source 'fs-job.sh.erb'
+      owner suser
+      group suser
+      mode '774'
+      variables({
+        :fqdn => fqdn,
+        :src => sd,
+        :dest => dd,
+        :period => job['retention-period'],
+        :suser => suser,
+        :cuser => job['user'],
+        :port => job['ssh-port'],
+        :args => job['additional-args']
+      })
+      action :create
+    end
+  elsif type == 'mysql'
+    template File.join('/home', suser, 'scripts', name) do
+      source 'mysql-job.sh.erb'
+      owner suser
+      group suser
+      mode '774'
+      variables({
+        :fqdn => fqdn,
+        :db => db,
+        :tempdest => tmpd,
+        :dest => dd,
+        :period => job['retention-period'],
+        :suser => suser,
+        :cuser => job['user'],
+        :port => job['ssh-port'],
+        :args => job['additional-args']
+      })
+      action :create
+    end
   end
   
   # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.

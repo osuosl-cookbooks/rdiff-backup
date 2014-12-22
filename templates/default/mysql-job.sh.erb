@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# rdiff-backup MySQL job script for $JOB managed by Chef. Changes will be overwritten.
+
+# This script is normally run by cron, but can be run manually to start the job if it is not already running.
+
+FILE=`basename $0`
+DIR=`dirname $0`
+PIDFILE="$DIR/.$FILE.lock"
+JOB="${FILE%.sh}"
+LOGPATH='/var/log/rdiff-backup'
+INSTANCES=`pgrep -fu <%= @suser %> $FILE | wc -l`
+
+# Prepends date to every line of stdin, then writes to both stdout and the log file.
+function log() {
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log")
+}
+
+# Prepends date to every line of stdin, then writes to stdout and both the individual and general log files.
+function logboth() {
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log")
+}
+
+# If we're root instead of the rdiff-backup server user, rerun the script as it.
+if [ `whoami` = 'root' ]; then
+  su <%= @suser %> -c $0
+else
+
+  # Only run if this script isn't already running
+  if [ $INSTANCES -lt 3 ]; then
+    echo $$ > $PIDFILE 2> >(log)
+
+    echo '----------------------------------------' | log
+
+    echo "Backup starting for '$JOB'..." | logboth
+    mkdir -p "<%= @dest %>/tmp/mysql/$JOB" 2>&1 | log
+    ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> mysqldump -f -u <%= @cuser %> -p <%= @password %> \
+      <% if @singletransaction %>
+      --single-transaction \
+      <% end %>
+      <% if @alldatabases %>
+      --all-databases \
+      <% else %>
+      <%= @db %> \
+      <% end %>
+      > <%= @tempdest %>/<%= @db %>.sql.part 2> >(log)
+    mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @dest %>/<%= @db %>.sql" 2>&1 | log
+    rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
+      "<%= @dest %>/tmp/mysql/$JOB" "<%= @dest %>/mysql/$JOB" 2>&1 | log
+    if [ ${PIPESTATUS[0]} -eq 0 ]; then
+      echo "Backup complete for '$JOB'." | logboth
+    else
+      if [ -d <%= @dest %>/rdiff-backup-data ]; then
+        echo "Backup failed for '$JOB'." | logboth
+      else
+        echo "First backup failed for '$JOB'." | logboth
+      fi
+    fi
+    rm -f "<%= @tempdest %>/<%= @db %>.sql.part" 2>&1 | log
+    rm -f "<%= @tempdest %>/<%= @db %>.sql" 2>&1 | log
+
+    echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
+    rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
+    if [ ${PIPESTATUS[0]} -eq 0 ]; then
+      echo "Purge complete for '$JOB'." | logboth
+    else
+      echo "Purge failed for '$JOB'." | logboth
+    fi
+
+    rm $PIDFILE 2>&1 | log
+
+  else
+    echo "Job already running for '$JOB'; terminating." | logboth
+  fi
+
+fi
