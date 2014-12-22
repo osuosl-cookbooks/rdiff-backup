@@ -4,7 +4,7 @@ node.default['rdiff-backup']['server']['fs']['job-defaults']['destination-dir'] 
 node.default['rdiff-backup']['server']['fs']['job-defaults']['retention-period'] = "3M"
 node.default['rdiff-backup']['server']['fs']['job-defaults']['additional-args'] = ""
 node.default['rdiff-backup']['server']['fs']['job-defaults']['exclude-dirs'] = []
-node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['enable-alerts'] = true
+node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['enable'] = true
 node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['max-change'] = 8192
 node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['max-late-start'] = 24
 node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['max-late-finish-warning'] = 4
@@ -16,7 +16,7 @@ node.default['rdiff-backup']['server']['mysql']['job-defaults']['destination-dir
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['retention-period'] = "3M"
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['additional-args'] = ""
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['single-transaction'] = ""
-node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['enable-alerts'] = true
+node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['enable'] = true
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['max-change'] = 8192
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['max-late-start'] = 24
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['max-late-finish-warning'] = 4

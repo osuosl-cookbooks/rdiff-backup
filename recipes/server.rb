@@ -167,7 +167,7 @@ end
 # Note: The server backup user's private key must be copied over manually.
 
 # Copy over and set up the Nagios nrpe plugin, if applicable.
-if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
+if servernode['rdiff-backup']['server']['nagios']['enable']
 
   # Copy over the check_rdiff and check_rdiff_log nrpe plugins.
   directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
@@ -427,7 +427,7 @@ jobs.each do |job|
   end
   
   # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['enable-alerts'] and job['nagios']['enable-alerts'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
+  if servernode['rdiff-backup']['server']['nagios']['enable'] and job['nagios']['enable'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
 
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
@@ -448,7 +448,7 @@ jobs.each do |job|
 end
 
 # If nagios alerts are enabled, create the log check alert.
-if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
+if servernode['rdiff-backup']['server']['nagios']['enable']
 
   servicename = 'rdiff-backup_log'
   nrpecheckname = 'check_rdiff-backup_log'
