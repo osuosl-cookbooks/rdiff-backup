@@ -9,6 +9,8 @@ node.default['rdiff-backup']['server']['mailto'] = ""
 node.default['rdiff-backup']['server']['nagios']['enable'] = true
 node.default['rdiff-backup']['server']['nagios']['plugin-dir'] = "/usr/lib64/nagios/plugins"
 node.default['rdiff-backup']['server']['fs']['enable'] = true
+node.default['rdiff-backup']['server']['fs']['jobs'] = {}
 node.default['rdiff-backup']['server']['mysql']['enable'] = true
+node.default['rdiff-backup']['server']['mysql']['jobs'] = {}
 
 node.force_override['authorization']['sudo']['include_sudoers_d'] = true

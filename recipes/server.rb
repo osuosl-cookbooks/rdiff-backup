@@ -138,6 +138,16 @@ if not filterenvs.empty?
   end
 end
 
+# Merge all client nodes over the server node so they get server defaults.
+newclientnodes = []
+clientnodes.each do |n|
+  newclientnodes << deep_merge(servernode, n)
+end
+clientnodes = newclientnodes
+
+puts "DEBUG: clientnodes"
+pp(clientnodes)
+
 if clientnodes.empty?
   Chef::Log.warn("No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
 end
@@ -167,7 +177,7 @@ end
 # Note: The server backup user's private key must be copied over manually.
 
 # Copy over and set up the Nagios nrpe plugin, if applicable.
-if servernode['rdiff-backup']['server']['nagios']['enable']
+if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
 
   # Copy over the check_rdiff and check_rdiff_log nrpe plugins.
   directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
@@ -208,6 +218,11 @@ jobs = []
 clientnodes.each do |n|
 
   Chef::Log.info("Creating jobs for host '#{n['fqdn']}'.")
+
+  puts "DEBUG: servernode:"
+  pp(servernode)
+  puts "DEBUG: n:"
+  pp(n)
   
   srcs = Set.new
   if servernode['rdiff-backup']['server']['fs']['enable'] and n['rdiff-backup']['client']['fs']['enable']
@@ -427,7 +442,7 @@ jobs.each do |job|
   end
   
   # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['enable'] and job['nagios']['enable'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
+  if servernode['rdiff-backup']['server']['nagios']['enable-alerts'] and job['nagios']['enable-alerts'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
 
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
@@ -448,7 +463,7 @@ jobs.each do |job|
 end
 
 # If nagios alerts are enabled, create the log check alert.
-if servernode['rdiff-backup']['server']['nagios']['enable']
+if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
 
   servicename = 'rdiff-backup_log'
   nrpecheckname = 'check_rdiff-backup_log'
