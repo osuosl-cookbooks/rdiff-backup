@@ -66,9 +66,16 @@ def remove_job(job, servernode)
       action :remove
     end
   elsif job['type'] == 'mysql'
-    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
-    nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
-      action :remove
+    if job['all-databases']
+      scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
+      nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
+        action :remove
+      end
+    else
+      scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_db_#{job['db']}")
+      nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_db_#{job['db']}" do
+        action :remove
+      end
     end
   end
   File.delete(scriptpath) if File.exists?(scriptpath)
@@ -145,9 +152,6 @@ clientnodes.each do |n|
 end
 clientnodes = newclientnodes
 
-puts "DEBUG: clientnodes"
-pp(clientnodes)
-
 if clientnodes.empty?
   Chef::Log.warn("No nodes returned from search or found in the '#{HOSTS_DATABAG}' databag.")
 end
@@ -177,7 +181,7 @@ end
 # Note: The server backup user's private key must be copied over manually.
 
 # Copy over and set up the Nagios nrpe plugin, if applicable.
-if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
+if servernode['rdiff-backup']['server']['nagios']['enable']
 
   # Copy over the check_rdiff and check_rdiff_log nrpe plugins.
   directory servernode['rdiff-backup']['server']['nagios']['plugin-dir'] do
@@ -219,11 +223,6 @@ clientnodes.each do |n|
 
   Chef::Log.info("Creating jobs for host '#{n['fqdn']}'.")
 
-  puts "DEBUG: servernode:"
-  pp(servernode)
-  puts "DEBUG: n:"
-  pp(n)
-  
   srcs = Set.new
   if servernode['rdiff-backup']['server']['fs']['enable'] and n['rdiff-backup']['client']['fs']['enable']
     srcs.merge(servernode['rdiff-backup']['server']['fs']['jobs'].keys)
@@ -297,13 +296,13 @@ if File.exists?(CRON_FILE)
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
-        matches = line.match(/.*\/(mysql_)?(.*?)_(.*)/)
+        jobname = line.gsub(/.*\/(.*?)/, '\1').strip
+        matches = jobname.match(/(mysql_)?(.*?)_(.*)/)
+        newjob['fqdn'] = matches[2]
         if matches[0] == 'mysql_'
-          newjob['fqdn'] = matches[1]
-          newjob['db'] = matches[2]
+          newjob['db'] = matches[3]
         else
-          newjob['fqdn'] = matches[0]
-          newjob['source-dir'] = matches[1]
+          newjob['source-dir'] = matches[3]
         end
         existingjobs << newjob
       end
@@ -442,7 +441,7 @@ jobs.each do |job|
   end
   
   # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['enable-alerts'] and job['nagios']['enable-alerts'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
+  if servernode['rdiff-backup']['server']['nagios']['enable'] and job['nagios']['enable'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
 
     latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
     latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
@@ -463,10 +462,9 @@ jobs.each do |job|
 end
 
 # If nagios alerts are enabled, create the log check alert.
-if servernode['rdiff-backup']['server']['nagios']['enable-alerts']
-
-  servicename = 'rdiff-backup_log'
-  nrpecheckname = 'check_rdiff-backup_log'
+servicename = 'rdiff-backup_log'
+nrpecheckname = 'check_rdiff-backup_log'
+if servernode['rdiff-backup']['server']['nagios']['enable']
 
   newservice = {
     'id' => servicename,
