@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: rdiff-backup
-# Recipe:: client-filesystem
+# Recipe:: client-fs
 #
 # Copyright 2014, Oregon State University
 #
