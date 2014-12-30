@@ -8,4 +8,3 @@ node.default['rdiff-backup']['client']['fs']['jobs'] = {}
 node.default['rdiff-backup']['client']['mysql']['enable'] = false
 node.default['rdiff-backup']['client']['mysql']['job-defaults'] = {}
 node.default['rdiff-backup']['client']['mysql']['jobs'] = {}
-node.default['rdiff-backup']['client']['mysql']['all-databases'] = true

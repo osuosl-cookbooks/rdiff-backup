@@ -33,16 +33,12 @@ else
     echo '----------------------------------------' | log
 
     echo "Backup starting for '$JOB'..." | logboth
-    mkdir -p "<%= @dest %>/tmp/mysql/$JOB" 2>&1 | log
+    mkdir -p "<%= @tempdest %>" 2>&1 | log
     ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> mysqldump -f -u <%= @cuser %> -p <%= @password %> \
       <% if @singletransaction %>
       --single-transaction \
       <% end %>
-      <% if @alldatabases %>
-      --all-databases \
-      <% else %>
       <%= @db %> \
-      <% end %>
       > <%= @tempdest %>/<%= @db %>.sql.part 2> >(log)
     mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @dest %>/<%= @db %>.sql" 2>&1 | log
     rdiff-backup <%= @args %> --backup-mode --force --create-full-path \

@@ -123,7 +123,6 @@ All starting with `node['rdiff-backup']['client']`:
 * `['mysql']['enable']` - Whether to perform MySQL backups of this client, default "false"
 * `['mysql']['job-defaults']` - Map of job attributes to use as the defaults for all MySQL jobs on this client, defaults below
 * `['mysql']['jobs']` - Map of jobs to run for this client, where each key is the name of a MySQL database to back up and each value is a map of job attributes specific to that job on this client, defaults below
-* `['mysql']['all-databases']` - If true, will dump entire MySQL server using `--all-databases` using defaults specified in `['mysql']['job-defaults']` and ignoring other any keys in `['mysql']['jobs']`, default "true"
 
 ## Job Attributes:
 

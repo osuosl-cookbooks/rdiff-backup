@@ -66,16 +66,9 @@ def remove_job(job, servernode)
       action :remove
     end
   elsif job['type'] == 'mysql'
-    if job['all-databases']
-      scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
-      nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
-        action :remove
-      end
-    else
-      scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_db_#{job['db']}")
-      nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_db_#{job['db']}" do
-        action :remove
-      end
+    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
+    nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
+      action :remove
     end
   end
   File.delete(scriptpath) if File.exists?(scriptpath)
@@ -228,7 +221,7 @@ clientnodes.each do |n|
     srcs.merge(servernode['rdiff-backup']['server']['fs']['jobs'].keys)
     srcs.merge(n['rdiff-backup']['client']['fs']['jobs'].keys)
     srcs.each do |src|
-      if src.start_with?("/") # Only work with absolute paths. Also excludes the "default" hash.
+      if src.start_with?("/") # Only work with absolute paths.
 
         job = deep_copy(servernode['rdiff-backup']['server']['fs']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
         deep_merge!(job, n['rdiff-backup']['client']['fs']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
@@ -259,6 +252,17 @@ clientnodes.each do |n|
   if servernode['rdiff-backup']['server']['mysql']['enable'] and n['rdiff-backup']['client']['mysql']['enable']
     mysqldbs.merge(servernode['rdiff-backup']['server']['mysql']['jobs'].keys)
     mysqldbs.merge(n['rdiff-backup']['client']['mysql']['jobs'].keys)
+
+    # If there are no databases specified, create jobs for each database.
+    if mysqldbs.empty?
+      include_recipe 'mysql::client'
+      #TODO: Use mysql2 gem instead of shelling out?
+      #chef_gem 'mysql2'
+      #mysqlconn = Mysql2::Client.new(:host => n['fqdn'], :username => "rdiff-backup")
+      #mysqldbs = mysqlconn.query("SHOW DATABASES")
+      mysqldbs = `mysql -h rdtest2.osuosl.org -u rdiff-backup -e "SHOW DATABASES" --column-names=0`.split()
+    end
+
     mysqldbs.each do |db|
       job = deep_copy(servernode['rdiff-backup']['server']['mysql']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
       deep_merge!(job, n['rdiff-backup']['client']['mysql']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
@@ -272,6 +276,8 @@ clientnodes.each do |n|
       #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
       job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
       job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
+
+      jobs << job
     end
   end
 end
@@ -314,7 +320,7 @@ end
 removejobs = existingjobs.dup.subtract(specifiedjobs)
 
 # Sort jobs by name to provide stable ordering
-jobs.sort! {|a,b| a['fqdn']+a['source-dir'] <=> b['fqdn']+b['source-dir'] }
+jobs.sort! {|a,b| a['fqdn']+(a['source-dir']||a['db']) <=> b['fqdn']+(b['source-dir']||b['db']) }
 
 # Figure out how much time to wait between starting jobs.
 unless jobs.empty?
@@ -338,22 +344,14 @@ jobs.each do |job|
     dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
     name = "#{job['fqdn']}_#{sd.gsub("/", "-")}"
     servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
-    nrpecheckname = "check_rdiff-backup_#{name}"
   elsif type == 'mysql'
-    if job['all-databases']
-      db = 'all-databases'
-      tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, 'all-databases')
-      dd = File.join(job['destination-dir'], 'mysql', fqdn, 'all-databases')
-      name = "mysql_#{job['fqdn']}_#{db}"
-    else
-      db = job['db']
-      tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, 'databases', db)
-      dd = File.join(job['destination-dir'], 'mysql', fqdn, 'databases', db)
-      name = "mysql_#{job['fqdn']}_db_#{db}"
-    end
+    db = job['db']
+    tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, db)
+    dd = File.join(job['destination-dir'], 'mysql', fqdn, db)
+    name = "mysql_#{job['fqdn']}_#{db}"
     servicename = "rdiff-backup_#{name}"
-    nrpecheckname = "rdiff-backup_#{name}"
   end
+  nrpecheckname = "check_rdiff-backup_#{name}"
 
   # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
   unless File.directory? dd
