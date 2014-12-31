@@ -294,3 +294,12 @@ Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
 Additionally, a databag for the rdiff-backup server may contain both server
 attributes (to be used as defaults for all jobs) and client attributes (for
 backing up itself).
+
+Upgrade Instructions
+--------------------
+
+For updating the rdiff-backup cookbook from version 1.0.8 to 2.0.0, the
+following must be performed:
+
+* Update the attribute tree structure in all roles and databags.
+* Rename the "filesystem" folder (by default at "/data/rdiff-backup/filesystem") to "fs"
