@@ -58,20 +58,21 @@ clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
 
 # Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
-  if job['type'] == 'fs'
-    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "#{job['fqdn']}_#{job['source-dir']}")
-    excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', "#{job['fqdn']}_#{job['source-dir']}")
-    File.delete(excludepath) if File.exists?(excludepath)
-    nagios_nrpecheck "check_rdiff-backup_#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" do
-      action :remove
-    end
-  elsif job['type'] == 'mysql'
-    scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', "mysql_#{job['fqdn']}_#{job['db']}")
-    nagios_nrpecheck "check_rdiff-backup_mysql_#{job['fqdn']}_#{job['db']}" do
-      action :remove
-    end
-  end
+
+  # Remove the script.
+  scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', job['name'])
   File.delete(scriptpath) if File.exists?(scriptpath)
+
+  # Remove the exclusion file if it's an fs job.
+  if job['type'] == 'fs'
+    excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', job['name'])
+    File.delete(excludepath) if File.exists?(excludepath)
+  end
+
+  # Remove the Nagios check.
+  nagios_nrpecheck "check_rdiff-backup_#{job['name']}" do
+    action :remove
+  end
 end
 
 # Find nodes to back up by searching.
@@ -230,8 +231,9 @@ clientnodes.each do |n|
 
         job['type'] = 'fs'
         # Keep higher-level attributes in the job object for convenience.
-        job['source-dir'] = src
+        job['source'] = src
         job['fqdn'] = n['fqdn']
+        job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source'].gsub("/", "-")}" # Name is used for referencing this job and is unique.
         #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
         job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
         job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
@@ -271,8 +273,9 @@ clientnodes.each do |n|
 
       job['type'] = 'mysql'
       # Keep higher-level attributes in the job object for convenience.
-      job['db'] = db
+      job['source'] = db
       job['fqdn'] = n['fqdn']
+      job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source']}" # Name is used for referencing this job and is unique.
       #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
       job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
       job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
@@ -286,12 +289,7 @@ end
 specifiedjobs = Set.new
 jobs.each do |job|
   newjob = {} # Create a new "bare" job with just enough information to identify it.
-  newjob['fqdn'] = job['fqdn']
-  if job['type'] == 'fs'
-    newjob['source-dir'] = job['source-dir'].gsub("/", "-")
-  elsif job['type'] == 'mysql'
-    newjob['db'] = job['db']
-  end
+  newjob['name'] = job['name']
   specifiedjobs << newjob
 end
 
@@ -302,15 +300,7 @@ if File.exists?(CRON_FILE)
     file.each_line do |line|
       if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
-        jobname = line.gsub(/.*\/(.*?)/, '\1').strip
-        matches = jobname.match(/(mysql_)?(.*?)_(.*)/)
-        newjob['fqdn'] = matches[2]
-        if matches[0] == 'mysql_'
-          newjob['db'] = matches[3]
-        else
-          newjob['source-dir'] = matches[3]
-        end
-        existingjobs << newjob
+        newjob['name'] = line.gsub(/.*\/(.*?)/, '\1').strip
       end
     end
   end
@@ -320,7 +310,7 @@ end
 removejobs = existingjobs.dup.subtract(specifiedjobs)
 
 # Sort jobs by name to provide stable ordering
-jobs.sort! {|a,b| a['fqdn']+(a['source-dir']||a['db']) <=> b['fqdn']+(b['source-dir']||b['db']) }
+jobs.sort! {|a,b| a['name'] <=> b['name'] }
 
 # Figure out how much time to wait between starting jobs.
 unless jobs.empty?
@@ -340,18 +330,16 @@ jobs.each do |job|
   maxchange = job['nagios']['max-change']
   latestart = job['nagios']['max-late-start']
   if type == 'fs'
-    sd = job['source-dir']
+    sd = job['source']
     dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
-    name = "#{job['fqdn']}_#{sd.gsub("/", "-")}"
-    servicename = "rdiff-backup_#{job['fqdn']}_#{sd}"
+    servicename = "rdiff-backup_#{job['name']}"
   elsif type == 'mysql'
-    db = job['db']
+    db = job['source']
     tmpd = File.join(job['destination-dir'], 'tmp', 'mysql', fqdn, db)
     dd = File.join(job['destination-dir'], 'mysql', fqdn, db)
-    name = "mysql_#{job['fqdn']}_#{db}"
-    servicename = "rdiff-backup_#{name}"
+    servicename = "rdiff-backup_#{job['name']}"
   end
-  nrpecheckname = "check_rdiff-backup_#{name}"
+  nrpecheckname = "check_rdiff-backup_#{job['name']}"
 
   # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
   unless File.directory? dd
@@ -378,7 +366,7 @@ jobs.each do |job|
       recursive true
       action :create
     end
-    template File.join('/home', suser, 'exclude', name) do
+    template File.join('/home', suser, 'exclude', job['name']) do
       source 'exclude.erb'
       owner suser
       group suser
@@ -400,7 +388,7 @@ jobs.each do |job|
     action :create
   end
   if type == 'fs'
-    template File.join('/home', suser, 'scripts', name) do
+    template File.join('/home', suser, 'scripts', job['name']) do
       source 'fs-job.sh.erb'
       owner suser
       group suser
@@ -418,7 +406,7 @@ jobs.each do |job|
       action :create
     end
   elsif type == 'mysql'
-    template File.join('/home', suser, 'scripts', name) do
+    template File.join('/home', suser, 'scripts', job['name']) do
       source 'mysql-job.sh.erb'
       owner suser
       group suser

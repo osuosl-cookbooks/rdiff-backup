@@ -6,9 +6,5 @@ MAILTO=<%= @mailto %>
 
 # Distribute jobs between <%= @shour %>:00 and <%= @ehour %>:00.
 <% @jobs.each do |job| -%>
-<% if job['type'] == 'fs' %>
-<%= job['minute'].to_int %> <%= job['hour'].to_int %> * * * <%= @suser %> <%= "/home/#{@suser}/scripts/#{job['fqdn']}_#{job['source-dir'].gsub("/", "-")}" %>
-<% else %>
-<%= job['minute'].to_int %> <%= job['hour'].to_int %> * * * <%= @suser %> <%= "/home/#{@suser}/scripts/mysql_#{job['fqdn']}_#{job['db']}" %>
-<% end -%>
+<%= job['minute'].to_int %> <%= job['hour'].to_int %> * * * <%= @suser %> <%= "/home/#{@suser}/scripts/#{job['name']}" %>
 <% end -%>
