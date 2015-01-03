@@ -234,9 +234,9 @@ clientnodes.each do |n|
         job['source'] = src
         job['fqdn'] = n['fqdn']
         job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source'].gsub("/", "-")}" # Name is used for referencing this job and is unique.
-        #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
-        job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
-        job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
+        job['user'] = n['rdiff-backup']['client']['user']
+        job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
+        job['ssh-key'] = n['rdiff-backup']['client']['fs']['ssh-key']
 
         # Remove exclusion rules that don't apply to this job
         relevantdirs = []
@@ -262,10 +262,23 @@ clientnodes.each do |n|
       #chef_gem 'mysql2'
       #mysqlconn = Mysql2::Client.new(:host => n['fqdn'], :username => "rdiff-backup")
       #mysqldbs = mysqlconn.query("SHOW DATABASES")
-      mysqldbs = `mysql -h rdtest2.osuosl.org -u rdiff-backup -e "SHOW DATABASES" --column-names=0`.split()
+      puts "DEBUG: ssh command"
+      sep = '\ '[0]
+      pp(sep)
+      command = "ssh -p #{n['rdiff-backup']['client']['ssh-port']} #{n['rdiff-backup']['client']['user']}@#{n['fqdn']} mysql -e 'SHOW"+sep+"DATABASES' -u #{n['rdiff-backup']['client']['mysql']['mysql-user']} -p'#{n['rdiff-backup']['client']['mysql']['mysql-password']}' --column-names=0"
+      pp(command)
+      result = %x(#{command})
+      pp(result)
+      mysqldbs = result.split()
+      pp(mysqldbs)
+      if mysqldbs.empty?
+        Chef::Log.warn("Unable to connect to database '#{n['rdiff-backup']['client']['mysql']['mysql-user']}@#{n['fqdn']}'")
+      end
     end
 
     mysqldbs.each do |db|
+      puts "DEBUG: db"
+      pp(db)
       job = deep_copy(servernode['rdiff-backup']['server']['mysql']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
       deep_merge!(job, n['rdiff-backup']['client']['mysql']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
       deep_merge!(job, servernode['rdiff-backup']['server']['mysql']['jobs'][db] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
@@ -276,9 +289,9 @@ clientnodes.each do |n|
       job['source'] = db
       job['fqdn'] = n['fqdn']
       job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source']}" # Name is used for referencing this job and is unique.
-      #TODO: Remove these "defaults" since we're specifying them in multiple places now and the node should always have a value anyway?
-      job['user'] = n['rdiff-backup']['client']['user'] || 'rdiff-backup-client'
-      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port'] || 22
+      job['user'] = n['rdiff-backup']['client']['user']
+      job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
+      job['ssh-key'] = n['rdiff-backup']['client']['mysql']['ssh-key']
 
       jobs << job
     end
@@ -331,7 +344,7 @@ jobs.each do |job|
   latestart = job['nagios']['max-late-start']
   if type == 'fs'
     sd = job['source']
-    dd = File.join(job['destination-dir'], 'filesystem', fqdn, sd)
+    dd = File.join(job['destination-dir'], 'fs', fqdn, sd)
     servicename = "rdiff-backup_#{job['name']}"
   elsif type == 'mysql'
     db = job['source']
@@ -341,15 +354,13 @@ jobs.each do |job|
   end
   nrpecheckname = "check_rdiff-backup_#{job['name']}"
 
-  # Create the base directory that this backup will go to (enough so that the rdiff-backup server user has write permission).
-  unless File.directory? dd
-    directory dd do
-      owner suser
-      group suser
-      mode '775'
-      recursive true
-      action :create
-    end
+  # Ensure the base directory that this backup will go to exists and provides write permission to the rdiff-backup user.
+  directory job['destination-dir'] do
+    owner suser
+    group suser
+    mode '775'
+    recursive true
+    action :create
   end
 
   # Set run times for each job, distributing them evenly across a certain time period every day.
@@ -387,6 +398,10 @@ jobs.each do |job|
     recursive true
     action :create
   end
+
+  puts "DEBUG: job"
+  pp(job)
+
   if type == 'fs'
     template File.join('/home', suser, 'scripts', job['name']) do
       source 'fs-job.sh.erb'
@@ -394,6 +409,7 @@ jobs.each do |job|
       group suser
       mode '774'
       variables({
+        :name => job['name'],
         :fqdn => fqdn,
         :src => sd,
         :dest => dd,
@@ -401,6 +417,7 @@ jobs.each do |job|
         :suser => suser,
         :cuser => job['user'],
         :port => job['ssh-port'],
+        :key => job['ssh-key'],
         :args => job['additional-args']
       })
       action :create
@@ -419,7 +436,10 @@ jobs.each do |job|
         :period => job['retention-period'],
         :suser => suser,
         :cuser => job['user'],
+        :muser => job['mysql-user'],
+        :mpass => job['mysql-password'],
         :port => job['ssh-port'],
+        :key => job['ssh-key'],
         :args => job['additional-args']
       })
       action :create

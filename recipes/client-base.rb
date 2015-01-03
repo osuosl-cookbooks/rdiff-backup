@@ -83,3 +83,10 @@ if usersdatabag.include?(user)
   end
   include_recipe 'user::data_bag'
 end
+
+# Copy over the SSH wrapper so that backup commands can be run properly.
+cookbook_file File.join('/home', user, 'sshwrapper.sh') do
+  source File.join('sshwrapper.sh')
+  mode '775'
+  action :create
+end

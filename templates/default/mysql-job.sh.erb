@@ -34,26 +34,39 @@ else
 
     echo "Backup starting for '$JOB'..." | logboth
     mkdir -p "<%= @tempdest %>" 2>&1 | log
-    ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> mysqldump -f -u <%= @cuser %> -p <%= @password %> \
+    mkdir -p "<%= @dest %>" 2>&1 | log
+    ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> \
+      "mysqldump <%= @db %> -f -u <%= @muser %> -p'<%= @mpass %>' \
       <% if @singletransaction %>
       --single-transaction \
-      <% end %>
-      <%= @db %> \
+      <% end %>"
       > <%= @tempdest %>/<%= @db %>.sql.part 2> >(log)
-    mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @dest %>/<%= @db %>.sql" 2>&1 | log
-    rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
-      "<%= @dest %>/tmp/mysql/$JOB" "<%= @dest %>/mysql/$JOB" 2>&1 | log
-    if [ ${PIPESTATUS[0]} -eq 0 ]; then
-      echo "Backup complete for '$JOB'." | logboth
-    else
+
+    if [ $? -ne 0 ]; then
       if [ -d <%= @dest %>/rdiff-backup-data ]; then
         echo "Backup failed for '$JOB'." | logboth
       else
         echo "First backup failed for '$JOB'." | logboth
       fi
+    else
+      mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @dest %>/<%= @db %>.sql" 2>&1 | log
+
+      rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
+        "<%= @tempdest %>" "<%= @dest %>" 2>&1 | log
+
+      if [ ${PIPESTATUS[0]} -eq 0 ]; then
+        echo "Backup complete for '$JOB'." | logboth
+      else
+        if [ -d <%= @dest %>/rdiff-backup-data ]; then
+          echo "Backup failed for '$JOB'." | logboth
+        else
+          echo "First backup failed for '$JOB'." | logboth
+        fi
+      fi
+
+      rm -f "<%= @tempdest %>/<%= @db %>.sql.part" 2>&1 | log
+      rm -f "<%= @tempdest %>/<%= @db %>.sql" 2>&1 | log
     fi
-    rm -f "<%= @tempdest %>/<%= @db %>.sql.part" 2>&1 | log
-    rm -f "<%= @tempdest %>/<%= @db %>.sql" 2>&1 | log
 
     echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
     rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log

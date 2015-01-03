@@ -117,12 +117,16 @@ All starting with `node['rdiff-backup']['client']`:
 * `['fs']['enable']` - Whether to perform filesystem backups of this client, default "true"
 * `['fs']['job-defaults']` - Map of job attributes to use as the defaults for all filesystem jobs on this client, defaults below
 * `['fs']['jobs']` - Map of jobs to run for this client, where each key is a source dir to back up and each value is a map of job attributes specific to that job on this client, defaults below
+* `['fs']['ssh-key']` - Path to SSH key to use for running rdiff-backup over SSH, default `"~/.ssh/id_rsa_fs`
 
 ### MySQL Attributes:
 
 * `['mysql']['enable']` - Whether to perform MySQL backups of this client, default "false"
 * `['mysql']['job-defaults']` - Map of job attributes to use as the defaults for all MySQL jobs on this client, defaults below
 * `['mysql']['jobs']` - Map of jobs to run for this client, where each key is the name of a MySQL database to back up and each value is a map of job attributes specific to that job on this client, defaults below
+* `['mysql']['ssh-key']` - Path to SSH key to use for SSH tunneling the mysqldump command, default `"~/.ssh/id_rsa_mysql`
+* `['mysql']['mysql-user']` - MySQL database username to connect with, default "rdiff-backup"
+* `['mysql']['mysql-password']` - MySQL database password to connect with, default "rdiff-backup"
 
 ## Job Attributes:
 
@@ -152,6 +156,8 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 ### MySQL Attributes:
 
 * `['mysql']['job-defaults']['single-transaction']` - Whether to run MySQL dumps with `--single-transaction`, default "true"
+* `['mysql']['job-defaults']['mysql-user']` - MySQL database username to connect with, default "rdiff-backup"
+* `['mysql']['job-defaults']['mysql-password']` - MySQL database password to connect with, default "rdiff-backup"
 
 ## Examples
 
@@ -217,16 +223,26 @@ one level, such as entirely through roles or entirely through databags.
 Usage
 -----
 
-To set up an rdiff-backup server, first generate an ssh keypair (such as with
-`ssh-keygen`) and create a myclientbackupusername.json in the "user" databag
-for the rdiff-backup client user containing the pubkey and its user id.
+To set up an rdiff-backup server, first generate an ssh keypair for the
+rdiff-backup server user (such as with `ssh-keygen -t rsa -b 4096`) on the
+rdiff-backup server named `id_rsa`/`id_rsa.pub` (which should go in
+`/home/rdiff-backup-server/.ssh` by default).  Then create a
+myclientbackupusername.json in the "user" databag for the rdiff-backup client
+user containing the pubkey and its user id.
 
 Example `data_bags/users/rdiff-backup-client.json`:
 
 `{
   "id"        : "rdiff-backup-client",
-  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"sudo rdiff-backup --server --restrict-read-only /\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
+  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"~/sshwrapper.sh\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
 }`
+
+The additional options before the SSH pubkey are for security purposes and are
+optional but recommended.  The sshwrapper.sh script allows multiple commands to
+be run (such as rdiff-backup, mysqldump, etc.) without the need to create
+multiple keypairs (since authorized\_keys only supports one command per
+keypair) while blocking other commands that might be used to attack the client
+system in the event that the rdiff-backup server's private key is compromised.
 
 To allow two rdiff-backup servers to run independently of each other in
 different environments, each with their own keys and clients, you must use
@@ -294,6 +310,17 @@ Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
 Additionally, a databag for the rdiff-backup server may contain both server
 attributes (to be used as defaults for all jobs) and client attributes (for
 backing up itself).
+
+## MySQL:
+
+To back up MySQL databases, a username and password must be set on the database
+so that the rdiff-backup server can access it (from localhost, due to SSH
+tunneling so that dumps are encrypted).  The user for each job must have read
+access to the database to be backed up.  If no databases are specified, the
+default username and password set in the client's attributes will be used to
+query the server with a `SHOW DATABASES` (from the rdiff-backup server, without
+SSH tunneling) and attempt to back all of them up.  It is recommended to use
+the same user to show and back up all databases on a client.
 
 Upgrade Instructions
 --------------------

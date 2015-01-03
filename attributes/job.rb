@@ -16,6 +16,8 @@ node.default['rdiff-backup']['server']['mysql']['job-defaults']['destination-dir
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['retention-period'] = "3M"
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['additional-args'] = ""
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['single-transaction'] = ""
+node.default['rdiff-backup']['client']['mysql']['job-defaults']['mysql-user'] = "rdiff-backup"
+node.default['rdiff-backup']['client']['mysql']['job-defaults']['mysql-password'] = "rdiff-backup"
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['enable'] = true
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['max-change'] = 8192
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['nagios']['max-late-start'] = 24
