@@ -270,8 +270,6 @@ clientnodes.each do |n|
     end
 
     mysqldbs.each do |db|
-      puts "DEBUG: db"
-      pp(db)
       job = deep_copy(servernode['rdiff-backup']['server']['mysql']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
       deep_merge!(job, n['rdiff-backup']['client']['mysql']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
       deep_merge!(job, servernode['rdiff-backup']['server']['mysql']['jobs'][db] || {}) # Merge the server's job-specific attributes over the top. (Levels 6 and 7)
@@ -391,9 +389,6 @@ jobs.each do |job|
     recursive true
     action :create
   end
-
-  puts "DEBUG: job"
-  pp(job)
 
   if type == 'fs'
     template File.join('/home', suser, 'scripts', job['name']) do
