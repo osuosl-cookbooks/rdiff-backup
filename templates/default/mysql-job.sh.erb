@@ -49,7 +49,7 @@ else
         echo "First backup failed for '$JOB'." | logboth
       fi
     else
-      mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @dest %>/<%= @db %>.sql" 2>&1 | log
+      mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @tempdest %>/<%= @db %>.sql" 2>&1 | log
 
       rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
         "<%= @tempdest %>" "<%= @dest %>" 2>&1 | log
