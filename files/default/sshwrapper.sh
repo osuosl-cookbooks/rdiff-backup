@@ -7,10 +7,8 @@
 case "$SSH_ORIGINAL_COMMAND" in
   "sudo rdiff-backup --server --restrict-read-only /")
     sudo rdiff-backup --server --restrict-read-only /;;
-  "mysql -e \'SHOW DATABASES\'"*)
-    $SSH_ORIGINAL_COMMAND;;
+  "mysql -e SHOW\ DATABASES"*)
+    eval $SSH_ORIGINAL_COMMAND;;
   "mysqldump"*)
-    $SSH_ORIGINAL_COMMAND;;
-  *)
-    echo "Invalid command";;
+    eval $SSH_ORIGINAL_COMMAND;;
 esac
