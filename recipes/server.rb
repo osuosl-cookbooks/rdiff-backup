@@ -262,15 +262,8 @@ clientnodes.each do |n|
       #chef_gem 'mysql2'
       #mysqlconn = Mysql2::Client.new(:host => n['fqdn'], :username => "rdiff-backup")
       #mysqldbs = mysqlconn.query("SHOW DATABASES")
-      puts "DEBUG: ssh command"
-      sep = '\ '[0]
-      pp(sep)
-      command = "ssh -p #{n['rdiff-backup']['client']['ssh-port']} #{n['rdiff-backup']['client']['user']}@#{n['fqdn']} mysql -e 'SHOW"+sep+"DATABASES' -u #{n['rdiff-backup']['client']['mysql']['mysql-user']} -p'#{n['rdiff-backup']['client']['mysql']['mysql-password']}' --column-names=0"
-      pp(command)
-      result = %x(#{command})
-      pp(result)
-      mysqldbs = result.split()
-      pp(mysqldbs)
+      command = "ssh -i #{File.join('/home', servernode['rdiff-backup']['server']['user'], '.ssh', 'id_rsa')} -p #{n['rdiff-backup']['client']['ssh-port']} #{n['rdiff-backup']['client']['user']}@#{n['fqdn']} mysql -e 'SHOW\\ DATABASES' -u #{n['rdiff-backup']['client']['mysql']['mysql-user']} -p'#{n['rdiff-backup']['client']['mysql']['mysql-password']}' --column-names=0"
+      mysqldbs = `#{command}`.split()
       if mysqldbs.empty?
         Chef::Log.warn("Unable to connect to database '#{n['rdiff-backup']['client']['mysql']['mysql-user']}@#{n['fqdn']}'")
       end
