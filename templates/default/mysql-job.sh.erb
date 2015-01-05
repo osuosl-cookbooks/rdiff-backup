@@ -39,7 +39,7 @@ else
       "mysqldump <%= @db %> -f -u <%= @muser %> -p'<%= @mpass %>' \
       <% if @singletransaction %>
       --single-transaction \
-      <% end %>"
+      <% end %>" \
       > <%= @tempdest %>/<%= @db %>.sql.part 2> >(log)
 
     if [ $? -ne 0 ]; then
