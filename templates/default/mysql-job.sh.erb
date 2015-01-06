@@ -35,7 +35,7 @@ else
     echo "Backup starting for '$JOB'..." | logboth
     mkdir -p "<%= @tempdest %>" 2>&1 | log
     mkdir -p "<%= @dest %>" 2>&1 | log
-    ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> \
+    nice -n 10 ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> \
       "mysqldump <%= @db %> -f -u <%= @muser %> -p'<%= @mpass %>' \
       <% if @singletransaction %>
       --single-transaction \
@@ -51,7 +51,7 @@ else
     else
       mv "<%= @tempdest %>/<%= @db %>.sql.part" "<%= @tempdest %>/<%= @db %>.sql" 2>&1 | log
 
-      rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
+      nice -n 10 rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
         "<%= @tempdest %>" "<%= @dest %>" 2>&1 | log
 
       if [ ${PIPESTATUS[0]} -eq 0 ]; then
@@ -69,7 +69,7 @@ else
     fi
 
     echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
-    rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
+    nice -n 10 rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
       echo "Purge complete for '$JOB'." | logboth
     else
