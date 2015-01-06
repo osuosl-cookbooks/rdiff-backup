@@ -11,12 +11,12 @@ JOB="${FILE%.sh}"
 LOGPATH='/var/log/rdiff-backup'
 INSTANCES=`pgrep -fu <%= @suser %> $FILE | wc -l`
 
-# Prepends date to every line of stdin, then writes to both stdout and the log file.
+# Prepends date to every line of stdin, then writes to the general log file (as well as stdout).
 function log() {
   sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log")
 }
 
-# Prepends date to every line of stdin, then writes to stdout and both the individual and general log files.
+# Prepends date to every line of stdin, then writes to both the general and individual log files (as well as stdout).
 function logboth() {
   sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log")
 }
