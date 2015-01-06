@@ -36,10 +36,7 @@ else
     mkdir -p "<%= @tempdest %>" 2>&1 | log
     mkdir -p "<%= @dest %>" 2>&1 | log
     nice -n 10 ssh -p <%= @port %> <%= @cuser %>@<%= @fqdn %> \
-      "mysqldump <%= @db %> -f -u <%= @muser %> -p'<%= @mpass %>' \
-      <% if @singletransaction %>
-      --single-transaction \
-      <% end %>" \
+      "mysqldump <%= @db %> -f -u <%= @muser %> -p'<%= @mpass %>'<%= " --single-transaction" if @singletransaction -%>" \
       > <%= @tempdest %>/<%= @db %>.sql.part 2> >(log)
 
     if [ $? -ne 0 ]; then
