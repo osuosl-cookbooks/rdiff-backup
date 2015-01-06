@@ -27,7 +27,7 @@ if [ `whoami` = 'root' ]; then
 else
 
   # Only run if this script isn't already running
-  if [ $INSTANCES -lt 3 ]; then
+  if [ $INSTANCES -lt 3 ]; then # Must be 2 processes; 1 process for this instance of the script, and 1 process for the pgrep that matches itself.
     echo $$ > $PIDFILE 2> >(log)
 
     echo '----------------------------------------' | log
