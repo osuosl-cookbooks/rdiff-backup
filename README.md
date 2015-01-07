@@ -77,6 +77,7 @@ Attributes
 * `node['rdiff-backup']['server']['start-hour']` - Earliest hour of the day to schedule jobs, default "13"
 * `node['rdiff-backup']['server']['end-hour']` - Latest hour of the day to schedule jobs, default "23"
 * `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
+* `node['rdiff-backup']['server']['restrict-to-environments']` - If `restrict-to-own-environment` is false, the rdiff-backup server will only back up clients in this given list of environments, defaults to all environments (effectively disabling all environment restrictions)
 * `node['rdiff-backup']['server']['mailto']` - The email address(es) (comma delimited) to mail cron reports to, default "" (no mail is sent)
 * `node['rdiff-backup']['server']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
 * `node['rdiff-backup']['server']['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
