@@ -119,7 +119,7 @@ clientnodes = clientsearchnodes.values
 
 # Filter out clients in the wrong environments, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
-  filterenvs = servernode['chef_environment']
+  filterenvs = [servernode['chef_environment']]
 else
   filterenvs = servernode['rdiff-backup']['server']['restrict-to-environments']
 end
