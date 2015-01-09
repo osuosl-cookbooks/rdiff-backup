@@ -125,10 +125,8 @@ else
 end
 if not filterenvs.empty?
   deep_copy(clientnodes).each do |n|
-    filterenvs.each do |env|
-      if n['chef_environment'] != env
-        clientnodes.delete(n)
-      end
+    if not filterenvs.include?(n['chef_environment'])
+      clientnodes.delete(n)
     end
   end
 end
