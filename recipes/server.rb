@@ -117,10 +117,15 @@ clientdatabagnodes.each do |dfqdn, dnode|
 end
 clientnodes = clientsearchnodes.values
 
-# Filter out clients not in our environment, if applicable.
+# Filter out clients in the wrong environments, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
-  deep_copy(clientnodes).each do |n|
-    if n['chef_environment'] != servernode['chef_environment']
+  filterenvs = [servernode['chef_environment']]
+else
+  filterenvs = servernode['rdiff-backup']['server']['restrict-to-environments']
+end
+if not filterenvs.empty?
+  clientnodes.dup.each do |n|
+    if not filterenvs.include?(n['chef_environment'])
       clientnodes.delete(n)
     end
   end

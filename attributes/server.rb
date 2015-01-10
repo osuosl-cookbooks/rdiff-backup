@@ -4,6 +4,7 @@ node.default['rdiff-backup']['server']['end-hour'] = 13 # (5am PST)
 node.default['rdiff-backup']['server']['user'] = "rdiff-backup-server"
 node.default['rdiff-backup']['server']['sudo'] = true
 node.default['rdiff-backup']['server']['restrict-to-own-environment'] = true
+node.default['rdiff-backup']['server']['restrict-to-environments'] = []
 node.default['rdiff-backup']['server']['mailto'] = ""
 node.default['rdiff-backup']['server']['nagios']['alerts'] = true
 node.default['rdiff-backup']['server']['nagios']['plugin-dir'] = "/usr/lib64/nagios/plugins"
