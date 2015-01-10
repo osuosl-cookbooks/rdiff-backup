@@ -124,7 +124,7 @@ else
   filterenvs = servernode['rdiff-backup']['server']['restrict-to-environments']
 end
 if not filterenvs.empty?
-  deep_copy(clientnodes).each do |n|
+  clientnodes.dup.each do |n|
     if not filterenvs.include?(n['chef_environment'])
       clientnodes.delete(n)
     end
