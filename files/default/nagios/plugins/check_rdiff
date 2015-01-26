@@ -138,20 +138,11 @@ if($no_mir == 1)
 	
 	$elapsed = ((time() - $cron_cycle) - stat($cur_mir)->mtime);
 	
-	if($elapsed > 20)
+	if($elapsed > 10800)
 	{
-		if ($elapsed < 3600)
-		{
-			printf("CRITICAL: Backup failed to run (%.1f minutes overdue) Last backup: %s\n",
-		  	$elapsed / 60,
-			scalar(localtime(stat($stats_fn)->mtime)));
-		}
-		else
-		{
-			printf("CRITICAL: Backup failed to run (%.1f hours overdue) Last backup: %s\n",
-		  	$elapsed / 3600,
-			scalar(localtime(stat($stats_fn)->mtime)));
-		}		
+		printf("CRITICAL: Backup failed to run (%.1f hours overdue) Last backup: %s\n",
+		$elapsed / 3600,
+		scalar(localtime(stat($stats_fn)->mtime)));
 		exit(2);
 	}
 	
