@@ -80,7 +80,6 @@ Attributes
 * `node['rdiff-backup']['server']['restrict-to-environments']` - If `restrict-to-own-environment` is false, the rdiff-backup server will only back up clients in this given list of environments, defaults to all environments (effectively disabling all environment restrictions)
 * `node['rdiff-backup']['server']['mailto']` - The email address(es) (comma delimited) to mail cron reports to, default "" (no mail is sent)
 * `node['rdiff-backup']['server']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
-* `node['rdiff-backup']['server']['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
 * `node['rdiff-backup']['server']['user']` - User to run backups with on the server side, default "rdiff-backup-server"
 * `node['rdiff-backup']['server']['jobs']` - Map of jobs to run for all clients, where each key is a source dir to back up (or 'default') and each value is a hash of attributes specific to that job, defaults below
 
