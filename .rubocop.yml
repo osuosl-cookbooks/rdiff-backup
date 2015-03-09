@@ -1,0 +1,4 @@
+AllCops:
+    Include:
+        - '**/Berksfile'
+        - '**/Cheffile'
