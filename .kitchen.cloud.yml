@@ -31,6 +31,11 @@ platforms:
   driver_config:
     username: centos
     image_ref: "CentOS 6.6"
+- name: centos-7.0
+  driver_plugin: openstack
+  driver_config:
+    username: centos
+    image_ref: "CentOS 7.0"
 
 suites:
   - name: client
