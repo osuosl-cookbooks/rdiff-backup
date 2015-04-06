@@ -3,7 +3,15 @@ driver:
   name: vagrant
 
 provisioner:
-  name: chef_solo
+  name: chef_zero
+  roles_path: ../../roles
+  data_bags_path: ../../data_bags
+  attributes:
+    authorization:
+      sudo:
+        users:
+          - vagrant
+        passwordless: true
 
 platforms:
   - name: centos-6.6
@@ -16,4 +24,8 @@ suites:
     attributes:
   - name: server
     run_list:
+      - recipe[rdiff-backup::server]
+  - name: all
+    run_list:
+      - recipe[rdiff-backup::client]
       - recipe[rdiff-backup::server]

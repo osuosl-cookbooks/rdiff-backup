@@ -2,28 +2,28 @@
 driver_config:
   openstack_username: <%= ENV['OS_USERNAME'] %>
   openstack_api_key: <%= ENV['OS_PASSWORD'] %>
-  openstack_auth_url: <%= ENV['OS_AUTH_URL'] %>
+  openstack_auth_url: <%= "#{ENV['OS_AUTH_URL']}/tokens" %>
   key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
   private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
   public_key_path: <%= ENV['OS_PUBLIC_SSH_KEY'] %>
-  openstack_tenant: <%= ENV['OS_TENANT'] %>
+  openstack_tenant: <%= ENV['OS_TENANT_NAME'] %>
   floating_ip: <%= ENV['OS_FLOATING_IP'] %>
   floating_ip_pool: <%= ENV['OS_FLOATING_IP_POOL'] %>
   flavor_ref: <%= ENV['OS_FLAVOR_REF'] %>
 
 provisioner:
-  name: chef_solo
+  name: chef_zero
+  roles_path: ../../roles
+  data_bags_path: ../../data_bags
   attributes:
-    mysql:
-      server_root_password: rootpass
-      server_repl_password: replpass
     authorization:
       sudo:
         users:
-          - vagrant
           - centos
-    omnibus_updater:
-      disabled: true
+          - ubuntu
+          - fedora
+          - debian
+        passwordless: true
 
 platforms:
 - name: centos-6.6
@@ -44,4 +44,8 @@ suites:
     attributes:
   - name: server
     run_list:
+      - recipe[rdiff-backup::server]
+  - name: all
+    run_list:
+      - recipe[rdiff-backup::client]
       - recipe[rdiff-backup::server]
