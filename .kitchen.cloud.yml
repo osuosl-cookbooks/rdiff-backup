@@ -26,11 +26,11 @@ provisioner:
       disabled: true
 
 platforms:
-- name: centos-6.5
+- name: centos-6.6
   driver_plugin: openstack
   driver_config:
     username: centos
-    image_ref: "CentOS 6.5"
+    image_ref: "CentOS 6.6"
 
 suites:
   - name: client
