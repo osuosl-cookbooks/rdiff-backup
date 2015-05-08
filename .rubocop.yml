@@ -1,0 +1,8 @@
+AllCops:
+  Include:
+    - '**/Berksfile'
+    - '**/Cheffile'
+  Exclude:
+    - 'metadata.rb'
+Metrics/LineLength:
+  Enabled: false

@@ -41,7 +41,7 @@ end
 
 # Recursive bot.merge!(top) for hashes.
 def deep_merge!(bot, top)
-  bot.merge!(top) { |k, botv, topv| (botv.class == Hash and topv.class == Hash) ? deep_merge!(botv, topv) : topv}
+  bot.merge!(top) { |k, botv, topv| (botv.class == Hash && topv.class == Hash) ? deep_merge!(botv, topv) : topv }
 end
 
 # Recursive bot.merge(top) for hashes; returns new hash rather than modifying the bottom one.
@@ -58,15 +58,14 @@ clientnodes = [] # Merges clientdatabagnodes over clientsearchnodes, not keyed.
 
 # Removes a job, deleting the files associated with it.
 def remove_job(job, servernode)
-
   # Remove the script.
   scriptpath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'scripts', job['name'])
-  File.delete(scriptpath) if File.exists?(scriptpath)
+  File.delete(scriptpath) if File.exist?(scriptpath)
 
   # Remove the exclusion file if it's an fs job.
   if job['type'] == 'fs'
     excludepath = File.join('/home', servernode['rdiff-backup']['server']['user'], 'exclude', job['name'])
-    File.delete(excludepath) if File.exists?(excludepath)
+    File.delete(excludepath) if File.exist?(excludepath)
   end
 
   # Remove the Nagios check.
@@ -76,21 +75,21 @@ def remove_job(job, servernode)
 end
 
 # Find nodes to back up by searching.
-Chef::Log.info("Beginning search for nodes. This may take some time depending on your node count.")
+Chef::Log.info('Beginning search for nodes. This may take some time depending on your node count.')
 query = 'recipes:rdiff-backup\:\:client'
 keys = {
-  'fqdn'              => [ 'fqdn' ],
-  'chef_environment'  => [ 'chef_environment' ],
-  'rdiff-backup'      => [ 'rdiff-backup' ]
+  'fqdn'              => ['fqdn'],
+  'chef_environment'  => ['chef_environment'],
+  'rdiff-backup'      => ['rdiff-backup']
 }
 begin
-  searchnodes = partial_search(:node, query, :keys => keys)
+  searchnodes = partial_search(:node, query, keys: keys)
 rescue
   begin
-    Chef::Log.warn("Partial search failed; reverting to normal search.")
+    Chef::Log.warn('Partial search failed; reverting to normal search.')
     searchnodes = search(:node, query)
   rescue
-    Chef::Log.warn("Normal search failed; not searching.")
+    Chef::Log.warn('Normal search failed; not searching.')
     searchnodes = []
   end
 end
@@ -104,10 +103,10 @@ begin
   databaghosts = data_bag(HOSTS_DATABAG).to_set
   databaghosts.each do |databagitem|
     databagnode = deep_copy_node(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
-    if databagnode.fetch('rdiff-backup',{})['server'] and servernode['fqdn'] == databagnode['fqdn']
+    if databagnode.fetch('rdiff-backup', {})['server'] && servernode['fqdn'] == databagnode['fqdn']
       deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
     end
-    if databagnode.fetch('rdiff-backup',{})['client']
+    if databagnode.fetch('rdiff-backup', {})['client']
       clientdatabagnodes[databagnode['fqdn']] = databagnode # If it's a client, keep it in our list of databag nodes.
     end
   end
@@ -153,7 +152,7 @@ end
 # Install required packages.
 include_recipe 'yum'
 include_recipe 'yum-epel'
-%w[ rdiff-backup cronolog ].each do |p|
+%w(rdiff-backup cronolog).each do |p|
   package p
 end
 
@@ -169,7 +168,7 @@ user servernode['rdiff-backup']['server']['user'] do
   system true
   shell '/bin/bash'
   home File.join('/home', servernode['rdiff-backup']['server']['user'])
-  supports :manage_home => true
+  supports manage_home: true
 end
 
 # Note: The server backup user's private key must be copied over manually.
@@ -198,10 +197,10 @@ if servernode['rdiff-backup']['server']['nagios']['enable']
   if servernode['rdiff-backup']['server']['sudo']
     begin
       sudo 'nrpe' do
-        user      'nrpe'
-        runas     'root'
-        nopasswd  true
-        commands  [File.join(node['nagios']['plugin_dir'], 'check_rdiff'), File.join(node['nagios']['plugin_dir'], 'check_rdiff_log')]
+        user 'nrpe'
+        runas 'root'
+        nopasswd true
+        commands [File.join(node['nagios']['plugin_dir'], 'check_rdiff'), File.join(node['nagios']['plugin_dir'], 'check_rdiff_log')]
       end
     rescue
       Chef::Log.warn("Unable to provide sudo access to nrpe user 'nrpe'")
@@ -218,11 +217,11 @@ clientnodes.each do |n|
   Chef::Log.info("Creating jobs for host '#{n['fqdn']}'.")
 
   srcs = Set.new
-  if servernode['rdiff-backup']['server']['fs']['enable'] and n['rdiff-backup']['client']['fs']['enable']
+  if servernode['rdiff-backup']['server']['fs']['enable'] && n['rdiff-backup']['client']['fs']['enable']
     srcs.merge(servernode['rdiff-backup']['server']['fs']['jobs'].keys)
     srcs.merge(n['rdiff-backup']['client']['fs']['jobs'].keys)
     srcs.each do |src|
-      if src.start_with?("/") # Only work with absolute paths.
+      if src.start_with?('/') # Only work with absolute paths.
 
         job = deep_copy(servernode['rdiff-backup']['server']['fs']['job-defaults']) # Start with the server's default attributes. (Levels 1, 2, and 3)
         deep_merge!(job, n['rdiff-backup']['client']['fs']['job-defaults'] || {}) # Merge the client's default attributes over the top. (Levels 4 and 5)
@@ -233,7 +232,7 @@ clientnodes.each do |n|
         # Keep higher-level attributes in the job object for convenience.
         job['source'] = src
         job['fqdn'] = n['fqdn']
-        job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source'].gsub("/", "-")}" # Name is used for referencing this job and is unique.
+        job['name'] = "#{job['type']}_#{job['fqdn']}_#{job['source'].gsub('/', '-')}" # Name is used for referencing this job and is unique.
         job['user'] = n['rdiff-backup']['client']['user']
         job['ssh-port'] = n['rdiff-backup']['client']['ssh-port']
         job['ssh-key'] = n['rdiff-backup']['client']['fs']['ssh-key']
@@ -241,7 +240,7 @@ clientnodes.each do |n|
         # Remove exclusion rules that don't apply to this job
         relevantdirs = []
         job['exclude-dirs'].each do |dir|
-          relevantdirs << dir if dir.start_with?(src) or dir.start_with?('*')
+          relevantdirs << dir if dir.start_with?(src) || dir.start_with?('*')
         end
         job['exclude-dirs'] = relevantdirs
 
@@ -251,19 +250,15 @@ clientnodes.each do |n|
   end
 
   mysqldbs = Set.new
-  if servernode['rdiff-backup']['server']['mysql']['enable'] and n['rdiff-backup']['client']['mysql']['enable']
+  if servernode['rdiff-backup']['server']['mysql']['enable'] && n['rdiff-backup']['client']['mysql']['enable']
     mysqldbs.merge(servernode['rdiff-backup']['server']['mysql']['jobs'].keys)
     mysqldbs.merge(n['rdiff-backup']['client']['mysql']['jobs'].keys)
 
     # If there are no databases specified, create jobs for each database.
     if mysqldbs.empty?
       include_recipe 'mysql::client'
-      #TODO: Use mysql2 gem instead of shelling out?
-      #chef_gem 'mysql2'
-      #mysqlconn = Mysql2::Client.new(:host => n['fqdn'], :username => "rdiff-backup")
-      #mysqldbs = mysqlconn.query("SHOW DATABASES")
       command = "ssh -i #{File.join('/home', servernode['rdiff-backup']['server']['user'], '.ssh', 'id_rsa')} -p #{n['rdiff-backup']['client']['ssh-port']} #{n['rdiff-backup']['client']['user']}@#{n['fqdn']} mysql -e 'SHOW\\ DATABASES' -u #{n['rdiff-backup']['client']['mysql']['mysql-user']} -p'#{n['rdiff-backup']['client']['mysql']['mysql-password']}' --column-names=0"
-      mysqldbs = `#{command}`.split()
+      mysqldbs = `#{command}`.split
       if mysqldbs.empty?
         Chef::Log.warn("Unable to connect to database '#{n['rdiff-backup']['client']['mysql']['mysql-user']}@#{n['fqdn']}'")
       end
@@ -299,10 +294,10 @@ end
 
 # Get the set of jobs which already exist so we can decide which ones to remove.
 existingjobs = Set.new
-if File.exists?(CRON_FILE)
-  File.open(CRON_FILE, "r") do |file|
+if File.exist?(CRON_FILE)
+  File.open(CRON_FILE, 'r') do |file|
     file.each_line do |line|
-      if line.match(/^\D.*/) == nil # Only parse lines that start with numbers, i.e. actual jobs.
+      if line.match(/^\D.*/).nil? # Only parse lines that start with numbers, i.e. actual jobs.
         newjob = {} # Create a new "bare" job with just enough information to identify it.
         newjob['name'] = line.gsub(/.*\/(.*?)/, '\1').strip
       end
@@ -314,11 +309,11 @@ end
 removejobs = existingjobs.dup.subtract(specifiedjobs)
 
 # Sort jobs by name to provide stable ordering
-jobs.sort! {|a,b| a['name'] <=> b['name'] }
+jobs.sort! { |a, b| a['name'] <=> b['name'] }
 
 # Figure out how much time to wait between starting jobs.
 unless jobs.empty?
-  minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60.0 ) / jobs.size
+  minutesbetweenjobs = ((servernode['rdiff-backup']['server']['end-hour'] - servernode['rdiff-backup']['server']['start-hour'] + 24) % 24 * 60.0) / jobs.size
 end
 
 services = []
@@ -373,10 +368,10 @@ jobs.each do |job|
       owner suser
       group suser
       mode '664'
-      variables({
-        :src => sd,
-        :paths => job['exclude-dirs'],
-      })
+      variables(
+        src: sd,
+        paths: job['exclude-dirs']
+      )
       action :create
     end
   end
@@ -396,18 +391,18 @@ jobs.each do |job|
       owner suser
       group suser
       mode '774'
-      variables({
-        :name => job['name'],
-        :fqdn => fqdn,
-        :src => sd,
-        :dest => dd,
-        :period => job['retention-period'],
-        :suser => suser,
-        :cuser => job['user'],
-        :port => job['ssh-port'],
-        :key => job['ssh-key'],
-        :args => job['additional-args']
-      })
+      variables(
+        name: job['name'],
+        fqdn: fqdn,
+        src: sd,
+        dest: dd,
+        period: job['retention-period'],
+        suser: suser,
+        cuser: job['user'],
+        port: job['ssh-port'],
+        key: job['ssh-key'],
+        args: job['additional-args']
+      )
       action :create
     end
   elsif type == 'mysql'
@@ -416,29 +411,29 @@ jobs.each do |job|
       owner suser
       group suser
       mode '774'
-      variables({
-        :fqdn => fqdn,
-        :db => db,
-        :tempdest => tmpd,
-        :dest => dd,
-        :period => job['retention-period'],
-        :suser => suser,
-        :cuser => job['user'],
-        :muser => job['mysql-user'],
-        :mpass => job['mysql-password'],
-        :port => job['ssh-port'],
-        :key => job['ssh-key'],
-        :args => job['additional-args']
-      })
+      variables(
+        fqdn: fqdn,
+        db: db,
+        tempdest: tmpd,
+        dest: dd,
+        period: job['retention-period'],
+        suser: suser,
+        cuser: job['user'],
+        muser: job['mysql-user'],
+        mpass: job['mysql-password'],
+        port: job['ssh-port'],
+        key: job['ssh-key'],
+        args: job['additional-args']
+      )
       action :create
     end
   end
-  
-  # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
-  if servernode['rdiff-backup']['server']['nagios']['enable'] and job['nagios']['enable'] and File.exists?(File.join(dd, 'rdiff-backup-data'))
 
-    latefinwarn = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
-    latefincrit = job['hour'] + (job['minute']+59)/60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
+  # If nagios alerts are enabled and the backup directory exists, ensure there are nagios alerts for the job.
+  if servernode['rdiff-backup']['server']['nagios']['enable'] && job['nagios']['enable'] && File.exist?(File.join(dd, 'rdiff-backup-data'))
+
+    latefinwarn = job['hour'] + (job['minute'] + 59) / 60 + job['nagios']['max-late-finish-warning'] # Minute is ceiling'd up to the next hour
+    latefincrit = job['hour'] + (job['minute'] + 59) / 60 + job['nagios']['max-late-finish-critical'] # Minute is ceiling'd up to the next hour
 
     newservice = {
       'id' => servicename,
@@ -484,13 +479,13 @@ node.set['nagios']['remote_services'] = services
 template CRON_FILE do
   source 'cron.d.erb'
   mode '644'
-  variables({
-    :shour => servernode['rdiff-backup']['server']['start-hour'],
-    :ehour => servernode['rdiff-backup']['server']['end-hour'],
-    :mailto => servernode['rdiff-backup']['server']['mailto'],
-    :suser => servernode['rdiff-backup']['server']['user'],
-    :jobs => jobs
-  })
+  variables(
+    shour: servernode['rdiff-backup']['server']['start-hour'],
+    ehour: servernode['rdiff-backup']['server']['end-hour'],
+    mailto: servernode['rdiff-backup']['server']['mailto'],
+    suser: servernode['rdiff-backup']['server']['user'],
+    jobs: jobs
+  )
   action :create
 end
 
@@ -519,11 +514,11 @@ if servernode['rdiff-backup']['server']['sudo']
   user = servernode['rdiff-backup']['server']['user']
   begin
     sudo user do
-      user      user
-      runas     servernode['rdiff-backup']['client']['user']
-      nopasswd  true
-      commands  ['/usr/bin/sudo rdiff-backup --server --restrict-read-only /']
-      defaults  ['!requiretty']
+      user user
+      runas servernode['rdiff-backup']['client']['user']
+      nopasswd true
+      commands ['/usr/bin/sudo rdiff-backup --server --restrict-read-only /']
+      defaults ['!requiretty']
     end
   rescue
     Chef::Log.warn("Unable to provide sudo access to rdiff-backup user '#{user}'")

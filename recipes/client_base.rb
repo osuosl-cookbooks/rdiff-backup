@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: rdiff-backup
-# Recipe:: client-base
+# Recipe:: client_base
 #
 # Copyright 2014, Oregon State University
 #
@@ -49,7 +49,7 @@ if user != 'root'
     system true
     shell '/bin/bash'
     home File.join('/home', user)
-    supports :manage_home => true
+    supports manage_home: true
   end
 
   # Give the user sudo access for the rdiff-backup command.
@@ -57,11 +57,11 @@ if user != 'root'
     node.force_override['authorization']['sudo']['include_sudoers_d'] = true
     begin
       sudo user do
-        user      user
-        runas     'root'
-        nopasswd  true
-        commands  ['/usr/bin/rdiff-backup --server --restrict-read-only /']
-        defaults  ['!requiretty']
+        user user
+        runas 'root'
+        nopasswd true
+        commands ['/usr/bin/rdiff-backup --server --restrict-read-only /']
+        defaults ['!requiretty']
       end
     rescue
       Chef::Log.warn("Unable to provide sudo access to rdiff-backup user '#{user}'")
@@ -78,8 +78,8 @@ end
 # As long as the pubkey databag exists for the user...
 if usersdatabag.include?(user)
   # Copy over the user's ssh pubkey if they're not already set up.
-  if not (node.fetch('users',{}).include?(user))
-    node.set['users'] = [user].concat(node['users']) # Add the user to the list of users to set up for this node.
+  unless node.fetch('users', {}).include?(user)
+    node.set['users'] = [user].concat(node.fetch('users', [])) # Add the user to the list of users to set up for this node.
   end
   include_recipe 'user::data_bag'
 end
