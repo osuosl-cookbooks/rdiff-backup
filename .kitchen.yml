@@ -22,10 +22,24 @@ suites:
     run_list:
       - recipe[rdiff-backup::client]
     attributes:
+      rdiff-backup:
+        server:
+          nagios:
+            enable: false
   - name: server
     run_list:
       - recipe[rdiff-backup::server]
+    attributes:
+      rdiff-backup:
+        server:
+          nagios:
+            enable: false
   - name: all
     run_list:
       - recipe[rdiff-backup::client]
       - recipe[rdiff-backup::server]
+    attributes:
+      rdiff-backup:
+        server:
+          nagios:
+            enable: false
