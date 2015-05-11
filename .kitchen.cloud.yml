@@ -13,8 +13,8 @@ driver_config:
 
 provisioner:
   name: chef_zero
-  roles_path: ../../roles
-  data_bags_path: ../../data_bags
+  roles_path: test/integration/roles
+  data_bags_path: test/integration/data_bags
   attributes:
     authorization:
       sudo:
