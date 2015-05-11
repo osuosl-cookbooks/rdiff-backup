@@ -4,5 +4,5 @@ cookbook 'yum-epel'
 cookbook 'user'
 cookbook 'partial_search'
 cookbook 'sudo'
-cookbook 'nagios', '< 5'
+cookbook 'nagios'
 metadata
