@@ -40,26 +40,11 @@ platforms:
 suites:
   - name: client
     run_list:
-      - recipe[rdiff-backup::client]
-    attributes:
-      rdiff-backup:
-        server:
-          nagios:
-            enable: false
+      - role[client]
   - name: server
     run_list:
-      - recipe[rdiff-backup::server]
-    attributes:
-      rdiff-backup:
-        server:
-          nagios:
-            enable: false
+      - role[server]
   - name: all
     run_list:
-      - recipe[rdiff-backup::client]
-      - recipe[rdiff-backup::server]
-    attributes:
-      rdiff-backup:
-        server:
-          nagios:
-            enable: false
+      - role[client]
+      - role[server]

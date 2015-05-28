@@ -103,6 +103,13 @@ begin
   databaghosts = data_bag(HOSTS_DATABAG).to_set
   databaghosts.each do |databagitem|
     databagnode = deep_copy_node(data_bag_item(HOSTS_DATABAG, databagitem)) # Read a "node" from the databag.
+
+    # For running integration tests where the server/client FQDNs are not known,
+    # replace all FQDNs with a given FQDN.
+    if servernode['rdiff-backup']['server']['fqdn-override']
+      servernode['fqdn'] = servernode['rdiff-backup']['server']['fqdn-override']
+    end
+
     if databagnode.fetch('rdiff-backup', {})['server'] && servernode['fqdn'] == databagnode['fqdn']
       deep_merge!(servernode, databagnode) # If we found the server databag, merge that over the servernode hash.
     end
@@ -124,7 +131,15 @@ clientdatabagnodes.each do |dfqdn, dnode|
 end
 clientnodes = clientsearchnodes.values
 
-# Filter out clients in the wrong environments, if applicable.
+# For running integration tests where the server/client FQDNs are not known,
+# replace all FQDNs with a given FQDN.
+if servernode['rdiff-backup']['server']['fqdn-override']
+  clientnodes.each do |n|
+    n['fqdn'] = servernode['rdiff-backup']['server']['fqdn-override']
+  end
+end
+
+# Filter out clients not in our environment, if applicable.
 if servernode['rdiff-backup']['server']['restrict-to-own-environment']
   filterenvs = [servernode['chef_environment']]
 else

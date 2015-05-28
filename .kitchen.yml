@@ -36,8 +36,8 @@ suites:
             enable: false
   - name: all
     run_list:
-      - recipe[rdiff-backup::client]
-      - recipe[rdiff-backup::server]
+      - role[client]
+      - role[server]
     attributes:
       rdiff-backup:
         server:

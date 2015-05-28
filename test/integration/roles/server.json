@@ -1,0 +1,76 @@
+{
+  "name": "server",
+  "description": "rdiff-backup server role with attributes for testing",
+  "chef_type": "role",
+  "json_class": "Chef::Role",
+  "env_run_lists": {},
+  "run_list": [
+    "recipe[rdiff-backup::server]"
+  ],
+  "default_attributes": {
+    "rdiff-backup": {
+      "server": {
+        "restrict-to-own-environment": false,
+        "fqdn-override": "localhost",
+        "nagios": {
+          "enable": false
+        },
+        "fs": {
+          "jobs": {
+            "/p1" :{},
+            "/p2" :{
+              "nagios": {
+                "max-change": 20,
+                "max-late-start": 20,
+                "max-late-finish-warning": 20,
+                "max-late-finish-critical": 20
+              }
+            },
+            "/p3" :{
+              "nagios": {
+                "max-late-start": 30,
+                "max-late-finish-warning": 30,
+                "max-late-finish-critical": 30
+              }
+            },
+            "/p4" :{
+              "nagios": {
+                "max-late-finish-warning": 40,
+                "max-late-finish-critical": 40
+              }
+            },
+            "/p5" :{
+              "nagios": {
+                "max-late-finish-critical": 50
+              }
+            },
+            "/p6": {
+              "retention-period": "6D"
+            },
+            "/p7": {
+              "retention-period": "6D"
+            },
+            "/p8": {
+              "retention-period": "6D"
+            },
+            "/p9": {
+              "retention-period": "6D"
+            }
+          }
+        }
+      },
+      "client": {
+        "fs": {
+          "jobs": {
+            "/p8": {
+              "retention-period": "8D"
+            },
+            "/p9": {
+              "retention-period": "8D"
+            }
+          }
+        }
+      }
+    }
+  }
+}

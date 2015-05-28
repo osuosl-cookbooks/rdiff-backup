@@ -1,0 +1,41 @@
+{
+    "id": "localhost",
+    "chef_environment": "dev",
+    "rdiff-backup": {
+        "server": {
+            "fs": {
+                "jobs": {
+                    "/p7": {
+                      "retention-period": "7D"
+                    },
+                    "/p8": {
+                      "retention-period": "7D"
+                    },
+                    "/p9": {
+                      "retention-period": "7D"
+                    }
+                }
+            }
+        },
+        "client": {
+            "user": "rdiff-backup-client",
+            "fs": {
+                "job-defaults": {
+                    "destination-dir": "/data/rdiff-backup",
+                    "retention-period": "5D",
+                    "exclude-dirs": [
+                        "/var/lib/mysql",
+                        "/var/tmp"
+                    ]
+                },
+                "jobs": {
+                    "/etc/cron.d": {},
+                    "/var": {},
+                    "/p9": {
+                      "retention-period": "9D"
+                    }
+                }
+            }
+        }
+    }
+}
