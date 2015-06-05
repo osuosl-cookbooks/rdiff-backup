@@ -140,6 +140,7 @@ All starting with `node['rdiff-backup']['<server|client>']`:
 
 * `['<fs|mysql>']['job-defaults']` - Map of optional attributes to be used as defaults for all jobs on this client, defaults below
 * `['<fs|mysql>']['job-defaults']['enable']` - Whether to run the job, default "true" (useful for disabling a specific job that would normally done be by default)
+* `['<fs|mysql>']['job-defaults']['remove']` - Whether to remove the job and stop doing backups, must be run at least once before job can stop being specified, default "false"
 * `['<fs|mysql>']['job-defaults']['destination-dir']` - Location to store backups on the server side, default "/data/rdiff-backup"
 * `['<fs|mysql>']['job-defaults']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
 * `['<fs|mysql>']['job-defaults']['additional-args']` - String of additional arguments to pass to rdiff-backup, default ""

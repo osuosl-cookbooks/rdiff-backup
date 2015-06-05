@@ -1,5 +1,6 @@
 # Default filesystem job attributes
 node.default['rdiff-backup']['server']['fs']['job-defaults']['enable'] = true
+node.default['rdiff-backup']['server']['fs']['job-defaults']['remove'] = false
 node.default['rdiff-backup']['server']['fs']['job-defaults']['destination-dir'] = '/data/rdiff-backup'
 node.default['rdiff-backup']['server']['fs']['job-defaults']['retention-period'] = '3M'
 node.default['rdiff-backup']['server']['fs']['job-defaults']['additional-args'] = ''
@@ -12,6 +13,7 @@ node.default['rdiff-backup']['server']['fs']['job-defaults']['nagios']['max-late
 
 # Default MySQL job attributes
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['enable'] = true
+node.default['rdiff-backup']['server']['mysql']['job-defaults']['remove'] = false
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['destination-dir'] = '/data/rdiff-backup'
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['retention-period'] = '3M'
 node.default['rdiff-backup']['server']['mysql']['job-defaults']['additional-args'] = ''
