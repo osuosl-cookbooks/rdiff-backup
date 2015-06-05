@@ -30,7 +30,8 @@ Features
 * Can back up clients managed by Chef
 * Can back up clients not managed by Chef
 * Can send Nagios alerts if backups fail, start late, run too long, grow too quickly, or become corrupted
-* [Planned] Can back up MySQL and PostgreSQL databases
+* Can back up MySQL databases
+* [Planned] Can back up PostgreSQL databases
 
 Overview
 --------
@@ -74,41 +75,107 @@ Attributes
 
 ## Server Attributes:
 
-* `node['rdiff-backup']['server']['start-hour']` - Earliest hour of the day to schedule jobs, default "13"
-* `node['rdiff-backup']['server']['end-hour']` - Latest hour of the day to schedule jobs, default "23"
-* `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
-* `node['rdiff-backup']['server']['restrict-to-environments']` - If `restrict-to-own-environment` is false, the rdiff-backup server will only back up clients in this given list of environments, defaults to all environments (effectively disabling all environment restrictions)
-* `node['rdiff-backup']['server']['mailto']` - The email address(es) (comma delimited) to mail cron reports to, default "" (no mail is sent)
-* `node['rdiff-backup']['server']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
-* `node['rdiff-backup']['server']['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
-* `node['rdiff-backup']['server']['user']` - User to run backups with on the server side, default "rdiff-backup-server"
-* `node['rdiff-backup']['server']['jobs']` - Map of jobs to run for all clients, where each key is a source dir to back up (or 'default') and each value is a hash of attributes specific to that job, defaults below
+These attributes are set on the rdiff-backup server and apply defaults to all
+jobs that run on it.
+
+All starting with `node['rdiff-backup']['server']`:
+
+* `['start-hour']` - Earliest hour of the day to schedule jobs, default "13"
+* `['end-hour']` - Latest hour of the day to schedule jobs, default "23"
+* `['user']` - User to run backups with on the server side, default "rdiff-backup-server"
+* `['sudo']` - Whether to provide sudo access to the rdiff-backup-server user, default "true" (may cause adverse effects if disabled)
+* `['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
+* `['mailto']` - A string of email address(es) (comma delimited) to mail cron reports to, default "" (no mail is sent)
+* `['nagios']['enable']` - Whether to provide Nagios alerts for the status of each job, default "true" (must be enabled for any alerts to be created)
+* `['nagios']['plugin-dir']` - The directory to store the `check_rdiff` nagios plugin, default "/usr/lib64/nagios/plugins"
+
+### Filesystem Attributes:
+
+* `['fs']['enable']` - Whether to perform filesystem backups of clients, default "true" (must be enabled for any filesystem backups to run)
+* `['fs']['job-defaults']` - Map of job attributes to use as the defaults for all filesystem jobs running on the server, defaults below
+* `['fs']['jobs']` - Map of jobs to run for all clients, where each key is a source dir to back up and each value is a map of job attributes specific to all jobs of the same name (filesystem path) running on the server, defaults below
+
+### MySQL Attributes:
+
+* `['mysql']['enable']` - Whether to perform MySQL backups of clients, default "true" (must be enabled for any mysql backups to run)
+* `['mysql']['job-defaults']` - Map of job attributes to use as the defaults for all MySQL jobs running on the server, defaults below
+* `['mysql']['jobs']` - Map of jobs to run for all clients, where each key is the name of a MySQL database to back up and each value is a map of job attributes specific to all jobs of the same name (MySQL database name) running on the server, defaults below
 
 ## Client Attributes:
 
-* `node['rdiff-backup']['client']['ssh-port']` - SSH port to connect to, default "22"
-* `node['rdiff-backup']['client']['user']` - User to run backups with on the client side, default "rdiff-backup-client"
-* `node['rdiff-backup']['client']['jobs']` - Map of jobs to run for a particular client, where each key is a source dir to back up (or 'default') and each value is a hash of attributes specific to that job, default empty
+These attributes are set on rdiff-backup clients and apply defaults to all jobs
+for that client, overriding server defaults.
+
+All starting with `node['rdiff-backup']['client']`:
+
+* `['ssh-port']` - SSH port to connect to, default "22"
+* `['user']` - User to run backups with on the client side, default "rdiff-backup-client"
+* `['sudo']` - Whether to provide sudo access to the rdiff-backup-client user, default "true" (may cause adverse effects if disabled)
+
+### Filesystem Attributes:
+
+* `['fs']['enable']` - Whether to perform filesystem backups of this client, default "true"
+* `['fs']['job-defaults']` - Map of job attributes to use as the defaults for all filesystem jobs on this client, defaults below
+* `['fs']['jobs']` - Map of jobs to run for this client, where each key is a source dir to back up and each value is a map of job attributes specific to that job on this client, defaults below
+* `['fs']['ssh-key']` - Path to SSH key to use for running rdiff-backup over SSH, default `"~/.ssh/id_rsa_fs`
+
+### MySQL Attributes:
+
+* `['mysql']['enable']` - Whether to perform MySQL backups of this client, default "false"
+* `['mysql']['job-defaults']` - Map of job attributes to use as the defaults for all MySQL jobs on this client, defaults below
+* `['mysql']['jobs']` - Map of jobs to run for this client, where each key is the name of a MySQL database to back up and each value is a map of job attributes specific to that job on this client, defaults below
+* `['mysql']['ssh-key']` - Path to SSH key to use for SSH tunneling the mysqldump command, default `"~/.ssh/id_rsa_mysql`
+* `['mysql']['mysql-user']` - MySQL database username to connect with, default "rdiff-backup"
+* `['mysql']['mysql-password']` - MySQL database password to connect with, default "rdiff-backup"
 
 ## Job Attributes:
 
-Job attributes may be set on either the server or the client.  When set on the
-server, the attributes will be used as the defaults for all jobs unless
-overridden by job attributes that are set on a client.
+Job attributes may be set on either the server or the client.  When
+`['job-defaults']` is set, those values will be used as the defaults for all
+jobs.  Client attributes override server attributes, and job-specific
+attributes (i.e. for a job in the `['jobs']` list rather than
+`['job-defaults']`) override both.
 
-* `node['rdiff-backup']['<server|client>']['jobs']['default']` - Map of optional attributes to be used as defaults for all jobs on this client, defaults below
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['destination-dir']` - Location to store backups on the server side, default "/data/rdiff-backup"
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['exclude-dirs']` - A set of files and directories not to ignore (not back up), default empty
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['additional-args']` - String of additional arguments to pass to rdiff-backup, default ""
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['nagios']['alerts']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 1024
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['nagios']['max-late-start']` - How late (in hours) the job can start before a critical alert is sent, default 2
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['nagios']['max-late-finish-critical']` - How long (in hours) the job can run before a critical alert is sent, default 8
+All starting with `node['rdiff-backup']['<server|client>']`:
 
-* `node['rdiff-backup']['<server|client>']['jobs']['default']['retention-period'] = '3M'` - Example of how to set the default retention-period for all jobs
-* `node['rdiff-backup']['<server|client>']['jobs']['/etc']['retention-period'] = '2W'` - Example of how to set the retention-period for the `/etc` job, overriding the default
+* `['<fs|mysql>']['job-defaults']` - Map of optional attributes to be used as defaults for all jobs on this client, defaults below
+* `['<fs|mysql>']['job-defaults']['enable']` - Whether to run the job, default "true" (useful for disabling a specific job that would normally done be by default)
+* `['<fs|mysql>']['job-defaults']['remove']` - Whether to remove the job and stop doing backups, must be run at least once before job can stop being specified, default "false"
+* `['<fs|mysql>']['job-defaults']['destination-dir']` - Location to store backups on the server side, default "/data/rdiff-backup"
+* `['<fs|mysql>']['job-defaults']['retention-period']` - String defining how long to keep backups, default "3M" (see rdiff-backup manual for --remove-older-than format)
+* `['<fs|mysql>']['job-defaults']['additional-args']` - String of additional arguments to pass to rdiff-backup, default ""
+* `['<fs|mysql>']['job-defaults']['nagios']['enable']` - Whether to provide Nagios alerts for the status of the backup, default "true" (no effect if server has all alerts disabled)
+* `['<fs|mysql>']['job-defaults']['nagios']['max-change']` - How many megabytes the backup repo can change by from a single backup before a warning alert is sent, default 8192
+* `['<fs|mysql>']['job-defaults']['nagios']['max-late-start']` - How late (in hours) the job can start before a critical alert is sent, default 2
+* `['<fs|mysql>']['job-defaults']['nagios']['max-late-finish-warning']` - How long (in hours) the job can run before a warning alert is sent, default 4
+* `['<fs|mysql>']['job-defaults']['nagios']['max-late-finish-critical']` - How long (in hours) the job can run before a critical alert is sent, default 8
+
+### Filesystem Attributes:
+
+* `['fs']['job-defaults']['exclude-dirs']` - A set of files and directories to ignore (not back up), default empty
+
+### MySQL Attributes:
+
+* `['mysql']['job-defaults']['single-transaction']` - Whether to run MySQL dumps with `--single-transaction`, default "true"
+* `['mysql']['job-defaults']['mysql-user']` - MySQL database username to connect with, default "rdiff-backup"
+* `['mysql']['job-defaults']['mysql-password']` - MySQL database password to connect with, default "rdiff-backup"
+
+## Examples
+
+To set the default retention period for all filesystem jobs:
+* `node['rdiff-backup']['server']['fs']['job-defaults']['retention-period'] = '3M'`
+
+To set the retention period for all `/etc` jobs, overriding the above default:
+* `node['rdiff-backup']['server']['fs']['jobs']['/etc']['retention-period'] = '2W'`
+
+To set the retention period for all MySQL jobs:
+* `node['rdiff-backup']['server']['mysql']['job-defaults']['retention-period'] = '2W'`
+
+To set the retention period for all MySQL jobs with databases named `drupal`, overriding the above default:
+* `node['rdiff-backup']['server']['mysql']['jobs']['drupal']['retention-period'] = '10D'`
+
+To set the retention period for the `drupal` MySQL database job on a particular client, overriding the above default:
+* `node['rdiff-backup']['client']['mysql']['jobs']['drupal']['retention-period'] = '20D'`
 
 ## Attribute Precedence:
 
@@ -119,54 +186,64 @@ overriding earlier ones:
    recipes/server.rb and recipes/client.rb.  These are the base defaults.
 
 2. Server node default attributes, as specified by
-   `['rdiff-backup']['server']['jobs']['default']` in the server's node
-   definition (usually set through roles).
+   `['rdiff-backup']['server']['<fs|mysql>']['job-defaults']` in the server's
+   node definition (usually set through roles).
 3. Server databag default attributes, as specified by
-   `['rdiff-backup']['server']['jobs']['default']` in the
+   `['rdiff-backup']['server']['<fs|mysql>']['job-defaults']` in the
    `data_bags/rdiff-backup_hosts/myserver_mydomain_com.json` databag.
    (Optional)
 4. Client node default attributes, as specified by
-   `['rdiff-backup']['client']['jobs']['default']` in the client's node
-   definition (usually set through roles).
+   `['rdiff-backup']['client']['<fs|mysql>']['job-defaults']` in the client's
+   node definition (usually set through roles).
 5. Client databag default attributes, as specified by
-   `['rdiff-backup']['client']['jobs']['default']` in the
+   `['rdiff-backup']['client']['<fs|mysql>']['job-defaults']` in the
    `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json` databag.
    (Optional)
 
 6. Server node job-specific attributes, as specified by
-   `['rdiff-backup']['server']['jobs']['/path/to/back/up']` in the server's
-   node definition (usually set through roles). (Not usually used)
+   `['rdiff-backup']['server']['<fs|mysql>']['jobs']['/path/to/back/up']` in
+   the server's node definition (usually set through roles). (Not usually used)
 7. Server databag job-specific attributes, as specified by
-   `['rdiff-backup']['server']['jobs']['/path/to/back/up']` in the
-   `data_bags/rdiff-backup_hosts/myserver_mydomain_com.json` databag.
+   `['rdiff-backup']['server']['<fs|mysql>']['jobs']['/path/to/back/up']` in
+   the `data_bags/rdiff-backup_hosts/myserver_mydomain_com.json` databag.
    (Optional, not usually used)
 8. Client node job-specific attributes, as specified by
-   `['rdiff-backup']['client']['jobs']['/path/to/back/up']` in the client's
-   node definition (usually set through roles).
+   `['rdiff-backup']['client']['<fs|mysql>']['jobs']['/path/to/back/up']` in
+   the client's node definition (usually set through roles).
 9. Client databag job-specific attributes, as specified by
-   `['rdiff-backup']['client']['jobs']['/path/to/back/up']` in the
-   `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json` databag.
+   `['rdiff-backup']['client']['<fs|mysql>']['jobs']['/path/to/back/up']` in
+   the `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json` databag.
    (Optional)
 
 In general, it may be easier to remember that databag attributes override node
 attributes, client attributes override server attributes, and job-specific
-attributes override 'default' job attributes.  It is also possible to simply
-ignore most of the order and set up backups entirely through one level, such as
-entirely through roles or entirely through databags.
+attributes override default (`['job-defaults']`) job attributes.  It is also
+possible to simply ignore most of the order and set up backups entirely through
+one level, such as entirely through roles or entirely through databags.
 
 Usage
 -----
 
-To set up an rdiff-backup server, first generate an ssh keypair (such as with
-`ssh-keygen`) and create a myclientbackupusername.json in the "user" databag
-for the rdiff-backup client user containing the pubkey and its user id.
+To set up an rdiff-backup server, first generate an ssh keypair for the
+rdiff-backup server user (such as with `ssh-keygen -t rsa -b 4096`) on the
+rdiff-backup server named `id_rsa`/`id_rsa.pub` (which should go in
+`/home/rdiff-backup-server/.ssh` by default).  Then create a
+myclientbackupusername.json in the "user" databag for the rdiff-backup client
+user containing the pubkey and its user id.
 
 Example `data_bags/users/rdiff-backup-client.json`:
 
 `{
   "id"        : "rdiff-backup-client",
-  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"sudo rdiff-backup --server --restrict-read-only /\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
+  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"~/sshwrapper.sh\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
 }`
+
+The additional options before the SSH pubkey are for security purposes and are
+optional but recommended.  The sshwrapper.sh script allows multiple commands to
+be run (such as rdiff-backup, mysqldump, etc.) without the need to create
+multiple keypairs (since authorized\_keys only supports one command per
+keypair) while blocking other commands that might be used to attack the client
+system in the event that the rdiff-backup server's private key is compromised.
 
 To allow two rdiff-backup servers to run independently of each other in
 different environments, each with their own keys and clients, you must use
@@ -181,9 +258,10 @@ ssh private key to the rdiff-backup server's `~/.ssh/id_rsa`.
 
 Include `recipe[rdiff-backup]` or `recipe[rdiff-backup::client]` in your node's
 `run_list`.  If the server has the jobs you want specified, those will be used.
-Otherwise, set the `node['rdiff-backup']['client']['jobs']` attribute for it
-(preferably in a role or databag).  All other attributes are optional, and the
-defaults of the cookbook and/or rdiff-backup server will be used.
+Otherwise, set the `node['rdiff-backup']['client']['<fs|mysql>']['jobs']`
+attribute for it (preferably in a role or databag).  All other attributes are
+optional, and the defaults of the cookbook and/or rdiff-backup server will be
+used.
 
 ## Client (unmanaged):
 
@@ -209,8 +287,8 @@ Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
         "client": {
             "ssh-port": 2222,
             "user": "my-special-rdiff-backup-user",
-            "jobs": {
-                "default": {
+            "fs": {
+                "job-defaults": {
                     "retention-period": "3M",
                     "exclude-dirs": [
                         "/etc/keys",
@@ -218,10 +296,12 @@ Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
                         "/var/log/nginx"
                     ]
                 },
-                "/etc": {},
-                "/home": {},
-                "/var/log": {
-                    "retention-period": "2W"
+                "jobs": {
+                    "/etc": {},
+                    "/home": {},
+                    "/var/log": {
+                        "retention-period": "2W"
+                    }
                 }
             }
         }
@@ -231,3 +311,23 @@ Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
 Additionally, a databag for the rdiff-backup server may contain both server
 attributes (to be used as defaults for all jobs) and client attributes (for
 backing up itself).
+
+## MySQL:
+
+To back up MySQL databases, a username and password must be set on the database
+so that the rdiff-backup server can access it (from localhost, due to SSH
+tunneling so that dumps are encrypted).  The user for each job must have read
+access to the database to be backed up.  If no databases are specified, the
+default username and password set in the client's attributes will be used to
+query the server with a `SHOW DATABASES` (from the rdiff-backup server, without
+SSH tunneling) and attempt to back all of them up.  It is recommended to use
+the same user to show and back up all databases on a client.
+
+Upgrade Instructions
+--------------------
+
+For updating the rdiff-backup cookbook from version 1.0.8 to 2.0.0, the
+following must be performed:
+
+* Update the attribute tree structure in all roles and databags.
+* Rename the "filesystem" folder (by default at "/data/rdiff-backup/filesystem") to "fs"

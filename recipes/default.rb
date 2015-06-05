@@ -17,4 +17,4 @@
 # limitations under the License.
 #
 
-include_recipe "rdiff-backup::client"
+include_recipe 'rdiff-backup::client'

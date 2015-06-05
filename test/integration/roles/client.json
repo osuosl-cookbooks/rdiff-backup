@@ -1,0 +1,31 @@
+{
+  "name": "client",
+  "description": "rdiff-backup client role with attributes for testing",
+  "chef_type": "role",
+  "json_class": "Chef::Role",
+  "env_run_lists": {},
+  "run_list": [
+    "recipe[rdiff-backup::client]"
+  ],
+  "default_attributes": {
+    "rdiff-backup": {
+      "client": {
+        "user": "rdiff-backup-client",
+        "fs": {
+          "job-defaults": {
+            "destination-dir": "/data/rdiff-backup",
+            "retention-period": "3M",
+            "exclude-dirs": [
+              "/var/lib/mysql",
+              "/var/tmp"
+            ]
+          },
+          "jobs": {
+            "/etc/cron.d": {},
+            "/var": {}
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: rdiff-backup
-# Recipe:: client
+# Recipe:: client_fs
 #
 # Copyright 2014, Oregon State University
 #
@@ -17,4 +17,9 @@
 # limitations under the License.
 #
 
-include_recipe 'rdiff-backup::client_fs'
+include_recipe 'rdiff-backup::client_base'
+
+# Install rdiff-backup.
+include_recipe 'yum'
+include_recipe 'yum-epel'
+package 'rdiff-backup'
