@@ -386,10 +386,14 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
     command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff_log"
     action :add
   end
-else
-  nagios_nrpecheck nrpecheckname do
-    action :remove
+else 
+  begin
+    nagios_nrpecheck nrpecheckname do
+      action :remove
+    end
+  rescue NoMethodError
   end
+
 end
 
 # Set up Nagios remote attributes.
