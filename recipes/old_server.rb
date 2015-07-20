@@ -361,10 +361,10 @@ jobs.each do |job|
     }
     services << newservice
 
-    nagios_nrpecheck nrpecheckname do
-      command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff -r #{dd} -w #{latefinwarn} -c #{latefincrit} -l #{maxchange} -p #{latestart}"
-      action :add
-    end
+#    nagios_nrpecheck nrpecheckname do
+#      command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff -r #{dd} -w #{latefinwarn} -c #{latefincrit} -l #{maxchange} -p #{latestart}"
+#      action :add
+#    end
 
   end
 end
@@ -382,14 +382,14 @@ if servernode['rdiff-backup']['server']['nagios']['alerts']
   }
   services << newservice
 
-  nagios_nrpecheck nrpecheckname do
-    command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff_log"
-    action :add
-  end
+#  nagios_nrpecheck nrpecheckname do
+#    command "sudo #{servernode['rdiff-backup']['server']['nagios']['plugin-dir']}/check_rdiff_log"
+#    action :add
+#  end
 else
-  nagios_nrpecheck nrpecheckname do
-    action :remove
-  end
+#  nagios_nrpecheck nrpecheckname do
+#    action :remove
+#  end
 end
 
 # Set up Nagios remote attributes.

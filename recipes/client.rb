@@ -1,5 +1,5 @@
 #
-# Cookbook Name:: rdiff-backup
+85;95;0c# Cookbook Name:: rdiff-backup
 # Recipe:: client
 #
 # Copyright 2013, Oregon State University
@@ -16,75 +16,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-HOSTS_DATABAG = 'rdiff-backup_hosts'
-USERS_DATABAG = 'users'
-
 # Install rdiff-backup.
 include_recipe 'yum'
 include_recipe 'yum-epel'
 package 'rdiff-backup'
 
-begin
-  hostsdatabag = data_bag(HOSTS_DATABAG)
-rescue
-  Chef::Log.warn("Unable to load databag '#{HOSTS_DATABAG}'")
-  hostsdatabag = []
-end
-fqdn = node['fqdn'].gsub('.', '_')
-# Use the user and sudo preferences from the host's databag if it exists and the attributes are specified, otherwise, use the attributes from the node definition.
-if hostsdatabag.include?(fqdn)
-  databagnode = data_bag_item(HOSTS_DATABAG, fqdn)
-  user = databagnode.fetch('rdiff-backup', {}).fetch('client', {})['user']
-  sudo = databagnode.fetch('rdiff-backup', {}).fetch('client', {})['sudo']
-end
-user ||= node['rdiff-backup']['client']['user']
-sudo ||= node['rdiff-backup']['client']['sudo']
+client_user = node['rdiff-backup']['client']['user']
 
-if user != 'root'
-  # Create the server backup group.
-  group user do
-    system true
-  end
+# Create the server backup user.
+user client_user do
+  comment 'User for rdiff-backup client backups'
+  shell '/bin/bash'
+  supports :manage_home => true
+  action :nothing
+end.run_action(:create)
 
-  # Create the server backup user.
-  user user do
-    comment 'User for rdiff-backup client backups'
-    gid user
-    system true
-    shell '/bin/bash'
-    home File.join('/home', user)
-    supports :manage_home => true
-  end
+ohai 'reload_passwd' do
+  action :nothing
+  plugin 'etc'
+end.run_action(:reload)
 
-  # Give the user sudo access for the rdiff-backup command.
-  if sudo
-    node.force_override['authorization']['sudo']['include_sudoers_d'] = true
-    begin
-      sudo user do
-        user      user
-        runas     'root'
-        nopasswd  true
-        commands  ['/usr/bin/rdiff-backup --server --restrict-read-only /']
-        defaults  ['!requiretty']
-      end
-    rescue
-      Chef::Log.warn("Unable to provide sudo access to rdiff-backup user '#{user}'")
-    end
-  end
+sudo client_user do
+  user client_user
+  group client_user
+  commands ['/usr/bin/rdiff-backup --server --restrict-read-only /']
+  nopasswd true
 end
-
-begin
-  usersdatabag = data_bag(USERS_DATABAG)
-rescue
-  Chef::Log.warn("Unable to load databag '#{USERS_DATABAG}'")
-  usersdatabag = []
-end
-# As long as the pubkey databag exists for the user...
-if usersdatabag.include?(user)
-  # Copy over the user's ssh pubkey if they're not already set up.
-  if not (node.fetch('users',{}).include?(user))
-    node.set['users'] = [user].concat(node['users']) # Add the user to the list of users to set up for this node.
-  end
-  include_recipe 'user::data_bag'
-end
+node.override['ssh_keys'][client_user] = ['rdiff-backup-client']
+include_recipe 'ssh-keys'
