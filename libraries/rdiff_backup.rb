@@ -15,6 +15,7 @@ class Chef
       attribute :ssh_port, kind_of: [String, Integer], default: 22
       attribute :retention_period, kind_of: String, default: '1W'
       attribute :args, kind_of: String, default: ''
+      attribute :lock_dir, kind_of: String, default: '/var/rdiff-backup/locks'
       attribute :data_bag, kind_of: String, default: 'rdiff-backup-ssh'
       attribute :nrpe, kind_of: [TrueClass, FalseClass], default: true
       attribute :nrpe_warning, kind_of: String, default: '2'
@@ -56,6 +57,12 @@ class Chef
           commands ['/usr/bin/sudo rdiff-backup'\
                     '--server --restrict-read-only /']
         end
+        directory new_resource.lock_dir do
+          owner new_resource.owner
+          group new_resource.group || new_resource.owner
+          mode 0755
+        end
+        
         directory ::File.join('/home', new_resource.owner, '.ssh') do
           owner new_resource.owner
           group new_resource.group || new_resource.owner
@@ -127,7 +134,7 @@ class Chef
           weekday new_resource.cron_weekday
           month new_resource.cron_month
           user new_resource.owner
-          command '/usr/bin/flock ' + filename
+          command ['/usr/bin/flock', new_resource.lock_dir, filename].join(' ')
         end
       end
     end
