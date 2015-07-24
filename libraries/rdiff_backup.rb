@@ -130,8 +130,8 @@ class Chef
             src: new_resource.source,
             dest: new_resource.destination,
             period: new_resource.retention_period,
-            suser: new_resource.owner,
-            cuser: new_resource.remote_user,
+            server_user: new_resource.owner,
+            client_user: new_resource.remote_user,
             port: new_resource.ssh_port,
             args: new_resource.args
           )

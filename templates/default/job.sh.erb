@@ -20,8 +20,8 @@ function logboth() {
 }
 
 # If we're root instead of the rdiff-backup server user, rerun the script as it.
-if [ `id -un` != '<%= @suser %>' ]; then
-  su <%= @suser %> -c $0
+if [ `id -un` != '<%= @server_user %>' ]; then
+  su <%= @server_user %> -c $0
 else
   echo '----------------------------------------' | log
 
@@ -31,9 +31,9 @@ else
     --exclude-globbing-filelist "${DIR}/../../exclude/<%= @fqdn %>/<%= @src.gsub('/', '_') %>" \
     --remote-schema \
     <% if node['fqdn'] == @fqdn %>
-    'sudo -u <%= @cuser %> %s' 'sudo rdiff-backup --server --restrict-read-only /::<%= @src %>' \
+    'sudo -u <%= @client_user %> %s' 'sudo rdiff-backup --server --restrict-read-only /::<%= @src %>' \
     <% else %>
-    'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @cuser %>@<%= @fqdn %>::<%= @src %>' \
+    'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @client_user %>@<%= @fqdn %>::<%= @src %>' \
     <% end %>
     '<%= @dest %>' 2>&1 | log
   if [ ${PIPESTATUS[0]} -eq 0 ]; then
