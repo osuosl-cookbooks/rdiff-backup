@@ -69,6 +69,7 @@ class Chef
           owner new_resource.owner
           group new_resource.group || new_resource.owner
           mode 0755
+          recursive true
         end
         
         directory ::File.join('/home', new_resource.owner, '.ssh') do
