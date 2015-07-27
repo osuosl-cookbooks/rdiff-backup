@@ -2,7 +2,7 @@ class Chef
   class Resource
     class RdiffBackup < LWRPBase
       self.resource_name = 'rdiff_backup'
-      actions :create
+      actions :create, :delete
       default_action :create
 
       attribute :owner, kind_of: String, default: 'rdiff-backup-server'
@@ -32,6 +32,45 @@ class Chef
   end
   class Provider
     class RdiffBackup < LWRPBase
+      action :delete do
+        if new_resource.nrpe
+          nrpe_check "check_rdiff_job_#{new_resource.name}" do
+            action :delete
+          end
+        end
+        file ::File.join('/home',
+                         new_resource.owner,
+                         'exclude',
+                         new_resource.fqdn,
+                         new_resource.source.gsub('/', '_')) do
+          action :delete
+        end
+        filename = ::File.join('/home',
+                               new_resource.owner,
+                               'scripts',
+                               new_resource.fqdn,
+                               new_resource.source.gsub('/', '_'))
+        template filename do
+          action :delete
+        end
+
+        cron new_resource.name do
+          action :delete
+        end
+        [::File.join('/home',
+                     new_resource.owner,
+                     'exclude',
+                     new_resource.fqdn),
+        ::File.join('/home',
+                    new_resource.owner,
+                    'scripts',
+                    new_resource.fqdn)
+        ].each do |d|
+          directory d do
+            action :delete
+          end
+        end
+      end
       action :create do
         include_recipe 'yum-epel'
         %w(rdiff-backup cronolog).each { |p| package p }
