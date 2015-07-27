@@ -143,7 +143,7 @@ class Chef
           weekday new_resource.cron_weekday
           month new_resource.cron_month
           user new_resource.owner
-          command ['/usr/bin/flock', new_resource.lock_dir, filename].join(' ')
+          command ['/usr/bin/flock', new_resource.lock_dir + '/' + new_resource.name, filename].join(' ')
         end
       end
     end
