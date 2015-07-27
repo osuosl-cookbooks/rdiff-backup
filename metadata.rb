@@ -14,6 +14,6 @@ depends 'user'
 depends 'partial_search'
 depends 'sudo'
 recommends 'nagios'
-depends 'osl-nrpe'
+depends 'nrpe'
 
 supports 'centos'

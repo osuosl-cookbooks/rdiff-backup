@@ -36,7 +36,15 @@ class Chef
         include_recipe 'yum-epel'
         %w(rdiff-backup cronolog).each { |p| package p }
         if new_resource.nrpe
-          include_recipe 'osl-nrpe'
+          include_recipe 'nrpe'
+          cookbook_file ::File.join(node['nrpe']['plugin_dir'],
+                                    'check_rdiff') do
+            mode 0755
+            cookbook 'rdiff-backup'
+            owner node['nrpe']['user']
+            group node['nrpe']['group']
+            source 'nagios/plugins/check_rdiff'
+          end
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
             command ::File.join(node['nrpe']['plugin_dir'],
                                 'check_rdiff '
