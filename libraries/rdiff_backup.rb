@@ -110,7 +110,6 @@ class Chef
           mode 0755
           recursive true
         end
-        
         directory ::File.join('/home', new_resource.owner, '.ssh') do
           owner new_resource.owner
           group new_resource.group || new_resource.owner
@@ -120,14 +119,12 @@ class Chef
           user new_resource.owner
           key secrets['ssh-key']
         end
-
         directory '/var/log/rdiff-backup' do
           owner new_resource.owner
           group new_resource.group
           mode 0755
           recursive true
         end
-
         [new_resource.destination, ::File.join('/home',
                                                new_resource.owner,
                                                'exclude',
