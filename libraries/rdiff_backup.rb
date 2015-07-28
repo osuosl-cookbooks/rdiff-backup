@@ -33,7 +33,7 @@ class Chef
   class Provider
     class RdiffBackup < LWRPBase
       action :delete do
-        if new_resource.nrpe
+        if new_resource.nrpe # ~FC023
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
             action :delete
           end
