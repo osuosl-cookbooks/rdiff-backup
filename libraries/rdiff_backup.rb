@@ -61,10 +61,10 @@ class Chef
                      new_resource.owner,
                      'exclude',
                      new_resource.fqdn),
-        ::File.join('/home',
-                    new_resource.owner,
-                    'scripts',
-                    new_resource.fqdn)
+         ::File.join('/home',
+                     new_resource.owner,
+                     'scripts',
+                     new_resource.fqdn)
         ].each do |d|
           directory d do
             action :delete
@@ -179,7 +179,9 @@ class Chef
           weekday new_resource.cron_weekday
           month new_resource.cron_month
           user new_resource.owner
-          command ['/usr/bin/flock', new_resource.lock_dir + '/' + new_resource.name, filename].join(' ')
+          command ['/usr/bin/flock',
+                   new_resource.lock_dir + '/' + new_resource.name,
+                   filename].join(' ')
         end
       end
     end

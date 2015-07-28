@@ -7,3 +7,5 @@ AllCops:
     - 'cookbooks/**/*'
 Documentation:
   Enabled: false
+Metrics/ClassLength:
+  Enabled: false
