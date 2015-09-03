@@ -83,6 +83,7 @@ class Chef
             owner node['nrpe']['user']
             group node['nrpe']['group']
             source 'nagios/plugins/check_rdiff'
+            cookbook 'rdiff-backup'
           end
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
             command ::File.join(node['nrpe']['plugin_dir'],
