@@ -6,10 +6,8 @@
 
 FILE=`basename $0`
 DIR=`dirname $0`
-PIDFILE="$DIR/.$FILE.lock"
 JOB="${FILE%.sh}"
 LOGPATH='/var/log/rdiff-backup'
-INSTANCES=`pgrep -fu <%= @suser %> $FILE | wc -l`
 
 # Prepends date to every line of stdin, then writes to both stdout and the log file.
 function log() {
@@ -22,49 +20,37 @@ function logboth() {
 }
 
 # If we're root instead of the rdiff-backup server user, rerun the script as it.
-if [ `whoami` = 'root' ]; then
-  su <%= @suser %> -c $0
+if [ `id -un` != '<%= @server_user %>' ]; then
+  su <%= @server_user %> -c $0
 else
+  echo '----------------------------------------' | log
 
-  # Only run if this script isn't already running
-  if [ $INSTANCES -lt 3 ]; then
-    echo $$ > $PIDFILE
-
-    echo '----------------------------------------' | log
-
-    echo "Backup starting for '$JOB'..." | logboth
-    nice -n 10 rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
-      --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems \
-      --exclude-globbing-filelist "${DIR}/../exclude/<%= @fqdn %>_<%= @src.gsub('/', '-') %>" \
-      --remote-schema \
-      <% if node['fqdn'] == @fqdn %>
-      'sudo -u <%= @cuser %> %s' 'sudo rdiff-backup --server --restrict-read-only /::<%= @src %>' \
-      <% else %>
-      'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @cuser %>@<%= @fqdn %>::<%= @src %>' \
-      <% end %>
-      '<%= @dest %>' 2>&1 | log
-    if [ ${PIPESTATUS[0]} -eq 0 ]; then
-      echo "Backup complete for '$JOB'." | logboth
-    else
-      if [ -d <%= @dest %>/rdiff-backup-data ]; then
-        echo "Backup failed for '$JOB'." | logboth
-      else
-        echo "First backup failed for '$JOB'." | logboth
-      fi
-    fi
-
-    echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
-    nice -n 10 rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
-    if [ ${PIPESTATUS[0]} -eq 0 ]; then
-      echo "Purge complete for '$JOB'." | logboth
-    else
-      echo "Purge failed for '$JOB'." | logboth
-    fi
-
-    rm $PIDFILE
-
+  echo "Backup starting for '$JOB'..." | logboth
+  nice -n 10 rdiff-backup <%= @args %> --backup-mode --force --create-full-path \
+    --exclude-device-files --exclude-fifos --exclude-sockets --exclude-other-filesystems \
+    --exclude-globbing-filelist "${DIR}/../../exclude/<%= @fqdn %>/<%= @src.gsub('/', '_') %>" \
+    --remote-schema \
+    <% if node['fqdn'] == @fqdn %>
+    'sudo -u <%= @client_user %> %s' 'sudo rdiff-backup --server --restrict-read-only /::<%= @src %>' \
+    <% else %>
+    'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @client_user %>@<%= @fqdn %>::<%= @src %>' \
+    <% end %>
+    '<%= @dest %>' 2>&1 | log
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "Backup complete for '$JOB'." | logboth
   else
-    echo "Job already running for '$JOB'; terminating." | logboth
+    if [ -d <%= @dest %>/rdiff-backup-data ]; then
+      echo "Backup failed for '$JOB'." | logboth
+    else
+      echo "First backup failed for '$JOB'." | logboth
+    fi
   fi
 
+  echo "Purging backups older than <%= @period %> for '$JOB'..." | logboth
+  nice -n 10 rdiff-backup --force --remove-older-than <%= @period %> '<%= @dest %>' 2>&1 | log
+  if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    echo "Purge complete for '$JOB'." | logboth
+  else
+    echo "Purge failed for '$JOB'." | logboth
+  fi
 fi

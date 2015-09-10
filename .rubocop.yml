@@ -1,0 +1,11 @@
+AllCops:
+  Include:
+    - '**/Berksfile'
+    - '**/Cheffile'
+  Exclude:
+    - '**/metadata.rb'
+    - 'cookbooks/**/*'
+Documentation:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false

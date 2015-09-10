@@ -6,12 +6,14 @@ description      'Installs/Configures rdiff-backup'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '1.1.1'
 
+depends 'ssh-keys'
+depends 'ssh_user'
 depends 'yum'
 depends 'yum-epel'
 depends 'user'
 depends 'partial_search'
-recommends 'sudo'
+depends 'sudo'
 recommends 'nagios'
-recommends 'nrpe'
+depends 'nrpe'
 
 supports 'centos'
