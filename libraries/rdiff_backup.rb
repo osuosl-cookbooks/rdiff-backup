@@ -85,13 +85,18 @@ class Chef
             source 'nagios/plugins/check_rdiff'
             cookbook 'rdiff-backup'
           end
+          # dir of repo to check
+          repo = ::File.join(new_resource.destination,
+                             'filesystem',
+                             new_resource.fqdn,
+                             new_resource.source)
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
-            command '/usr/bin/sudo ' \
+            command '/usr/bin/sudo ' +
                     ::File.join(node['nrpe']['plugin_dir'],
                                 'check_rdiff '
                                ) + "-w #{new_resource.nrpe_warning} "\
                                    "-c #{new_resource.nrpe_critical} "\
-                                   "-r #{new_resource.destination} "\
+                                   "-r #{repo} "\
                                    "-p #{new_resource.nrpe_period} "\
                                    "-l #{new_resource.nrpe_transferred}"
           end
