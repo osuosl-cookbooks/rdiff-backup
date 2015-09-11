@@ -103,6 +103,7 @@ class Chef
         sudo new_resource.owner do
           user new_resource.owner
           group new_resource.group
+          nopasswd true
           commands ['/usr/bin/sudo rdiff-backup'\
                     '--server --restrict-read-only /']
         end
