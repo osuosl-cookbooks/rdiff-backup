@@ -104,7 +104,7 @@ class Chef
           user new_resource.owner
           group new_resource.group
           nopasswd true
-          commands ['/usr/bin/sudo rdiff-backup'\
+          commands ['/usr/bin/sudo rdiff-backup '\
                     '--server --restrict-read-only /']
         end
         directory new_resource.lock_dir do
