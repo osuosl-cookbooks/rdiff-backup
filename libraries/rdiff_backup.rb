@@ -18,8 +18,8 @@ class Chef
       attribute :lock_dir, kind_of: String, default: '/var/rdiff-backup/locks'
       attribute :data_bag, kind_of: String, default: 'rdiff-backup-ssh'
       attribute :nrpe, kind_of: [TrueClass, FalseClass], default: true
-      attribute :nrpe_warning, kind_of: String, default: '2'
-      attribute :nrpe_critical, kind_of: String, default: '3'
+      attribute :nrpe_warning, kind_of: String, default: '16'
+      attribute :nrpe_critical, kind_of: String, default: '18'
       attribute :nrpe_period, kind_of: String, default: '24'
       attribute :nrpe_transferred, kind_of: String, default: '800000000'
       attribute :exclude, kind_of: Array, default: []
