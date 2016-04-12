@@ -45,12 +45,11 @@ class Chef
                          new_resource.source.gsub('/', '_')) do
           action :delete
         end
-        filename = ::File.join('/home',
-                               new_resource.owner,
-                               'scripts',
-                               new_resource.fqdn,
-                               new_resource.source.gsub('/', '_'))
-        template filename do
+        file ::File.join('/home',
+                         new_resource.owner,
+                         'scripts',
+                         new_resource.fqdn,
+                         new_resource.source.tr('/', '_')) do
           action :delete
         end
 
