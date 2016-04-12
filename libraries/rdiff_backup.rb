@@ -42,7 +42,7 @@ class Chef
                          new_resource.owner,
                          'exclude',
                          new_resource.fqdn,
-                         new_resource.source.gsub('/', '_')) do
+                         new_resource.source.tr('/', '_')) do
           action :delete
         end
         file ::File.join('/home',
@@ -146,7 +146,7 @@ class Chef
                          new_resource.owner,
                          'exclude',
                          new_resource.fqdn,
-                         new_resource.source.gsub('/', '_')) do
+                         new_resource.source.tr('/', '_')) do
           owner new_resource.owner
           group new_resource.group || new_resource.owner
           mode 0644
@@ -156,7 +156,7 @@ class Chef
                                new_resource.owner,
                                'scripts',
                                new_resource.fqdn,
-                               new_resource.source.gsub('/', '_'))
+                               new_resource.source.tr('/', '_'))
         template filename do
           source 'job.sh.erb'
           mode 0775
