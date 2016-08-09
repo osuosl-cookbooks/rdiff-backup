@@ -67,6 +67,7 @@ class Chef
                       new_resource.fqdn)
         ].each do |d|
           directory d do
+            recursive true
             action :delete
           end
         end
