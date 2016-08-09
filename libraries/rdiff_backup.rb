@@ -56,14 +56,15 @@ class Chef
         cron new_resource.name do
           action :delete
         end
-        [::File.join('/home',
-                     new_resource.owner,
-                     'exclude',
-                     new_resource.fqdn),
-         ::File.join('/home',
-                     new_resource.owner,
-                     'scripts',
-                     new_resource.fqdn)
+        [
+          ::File.join('/home',
+                      new_resource.owner,
+                      'exclude',
+                      new_resource.fqdn),
+          ::File.join('/home',
+                      new_resource.owner,
+                      'scripts',
+                      new_resource.fqdn)
         ].each do |d|
           directory d do
             action :delete
@@ -85,14 +86,13 @@ class Chef
             cookbook 'rdiff-backup'
           end
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
-            command '/usr/bin/sudo ' +
-                    ::File.join(node['nrpe']['plugin_dir'],
-                                'check_rdiff '
-                               ) + "-w #{new_resource.nrpe_warning} "\
-                                   "-c #{new_resource.nrpe_critical} "\
-                                   "-r #{new_resource.destination} "\
-                                   "-p #{new_resource.nrpe_period} "\
-                                   "-l #{new_resource.nrpe_transferred}"
+            command '/usr/bin/sudo ' + ::File.join(
+              node['nrpe']['plugin_dir'], 'check_rdiff '
+            ) + "-w #{new_resource.nrpe_warning} "\
+                "-c #{new_resource.nrpe_critical} "\
+                "-r #{new_resource.destination} "\
+                "-p #{new_resource.nrpe_period} "\
+                "-l #{new_resource.nrpe_transferred}"
           end
         end
         secrets = ::Chef::EncryptedDataBagItem.load('rdiff-backup-secrets',
@@ -127,14 +127,16 @@ class Chef
           mode 0755
           recursive true
         end
-        [new_resource.destination, ::File.join('/home',
-                                               new_resource.owner,
-                                               'exclude',
-                                               new_resource.fqdn),
-         ::File.join('/home',
-                     new_resource.owner,
-                     'scripts',
-                     new_resource.fqdn)
+        [
+          new_resource.destination,
+          ::File.join('/home',
+                      new_resource.owner,
+                      'exclude',
+                      new_resource.fqdn),
+          ::File.join('/home',
+                      new_resource.owner,
+                      'scripts',
+                      new_resource.fqdn)
         ].each do |d|
           directory d do
             owner new_resource.owner
