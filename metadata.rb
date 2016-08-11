@@ -1,4 +1,6 @@
 name             'rdiff-backup'
+issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
+source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 maintainer       'Oregon State University'
 maintainer_email 'systems@osuosl.org'
 license          'Apache 2.0'

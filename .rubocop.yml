@@ -9,3 +9,6 @@ Documentation:
   Enabled: false
 Metrics/ClassLength:
   Enabled: false
+
+Style/NumericLiteralPrefix:
+  EnforcedOctalStyle: zero_only
