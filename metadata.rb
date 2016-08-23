@@ -5,6 +5,8 @@ license          'Apache 2.0'
 description      'Installs/Configures rdiff-backup'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '2.0.6'
+issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
+source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
 depends 'ssh-keys'
 depends 'ssh_user'
@@ -13,7 +15,7 @@ depends 'yum-epel'
 depends 'user'
 depends 'partial_search'
 depends 'sudo'
-recommends 'nagios'
+depends 'nagios'
 depends 'nrpe'
 
 supports 'centos', '~> 6.0'
