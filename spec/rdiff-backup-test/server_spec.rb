@@ -147,6 +147,14 @@ describe 'rdiff-backup-test::server' do
              }
              )
            end
+           it do
+             expect(chef_run).to create_rdiff_backup('test1').with(
+                 fqdn: '192.168.60.11',
+                 source: '/help/me/obiwan',
+                 destination: '/you/are/my/only/hope',
+                 exclude: %w(**/darth-vader /help/me/obiwan/emperor-palpatine)
+             )
+           end
           it do
             expect(chef_run).to create_cron('test1').with(
               minute: '0',
