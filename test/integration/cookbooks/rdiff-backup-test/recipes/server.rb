@@ -6,7 +6,7 @@ rdiff_backup 'test1' do
   action :create
 end
 
-rdiff_backup 'test1' do
+rdiff_backup 'test2' do
   fqdn '192.168.60.11'
   source '/help/me/obiwan'
   destination '/you/are/my/only/hope'

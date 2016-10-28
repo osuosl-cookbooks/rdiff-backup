@@ -8,7 +8,7 @@ describe 'rdiff-backup-test::server' do
           pltfrm.dup.merge(step_into: ['rdiff-backup'])
         )
       end
-      cached(:chef_run) { runner.converge(described_recipe) }
+      let(:chef_run) { runner.converge(described_recipe) }
 
       before do
         stub_command('secrets').and_return(false)
@@ -16,10 +16,13 @@ describe 'rdiff-backup-test::server' do
                                                     'secrets').and_return(
                                                       key: 'secret-key'
                                                     )
-        runner.node.automatic['rdiff-backup']['nrpe'] = false
+
       end
       context 'Create: nrpe is false' do
-        cached(:chef_run) { runner.converge(described_recipe) }
+        let(:chef_run) { runner.converge(described_recipe) }
+        before do
+          runner.node.override['rdiff-backup']['nrpe'] = false
+        end
         it do
           expect(chef_run).to_not include_recipe('nrpe')
         end
@@ -47,12 +50,9 @@ describe 'rdiff-backup-test::server' do
       end
 
       context 'Delete: nrpe is false' do
-        cached(:chef_run) { runner.converge(described_recipe) }
+        let(:chef_run) { runner.converge(described_recipe) }
         it do
-          expect(chef_run.node['rdiff-backup']['nrpe']).to eq(false)
-        end
-        it do
-          expect(chef_run).to_not remove_nrpe_check('check_rdiff_job_test1')
+          expect(chef_run).to_not remove_nrpe_check('check_rdiff_job_test2')
         end
       end
     end

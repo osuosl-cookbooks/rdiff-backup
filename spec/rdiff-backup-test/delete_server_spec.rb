@@ -21,7 +21,7 @@ describe 'rdiff-backup-test::server' do
       # Delete
       context 'Delete: nrpe is true' do
         it do
-          expect(chef_run).to remove_nrpe_check('check_rdiff_job_test1')
+          expect(chef_run).to remove_nrpe_check('check_rdiff_job_test2')
         end
 
         it do
@@ -35,7 +35,7 @@ describe 'rdiff-backup-test::server' do
           )
         end
         it do
-          expect(chef_run).to delete_cron('test1')
+          expect(chef_run).to delete_cron('test2')
         end
         %w(/home/rdiff-backup-server/exclude/192.168.60.11
            /home/rdiff-backup-server/scripts/192.168.60.11).each do |d|
