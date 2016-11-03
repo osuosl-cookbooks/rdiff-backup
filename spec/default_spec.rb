@@ -6,15 +6,12 @@ describe 'rdiff-backup::default' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
-      it do
-        expect{chef_run}.to_not raise_error
-      end
       before do
         stub_data_bag_item('users', 'rdiff-backup-client')
       end
-      # it do
-      #   expect(chef_run).to include_recipe('rdiff-backup::client')
-      # end
+      it do
+        expect(chef_run).to include_recipe('rdiff-backup::client')
+      end
     end
   end
 end
