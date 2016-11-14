@@ -8,8 +8,7 @@ describe 'rdiff-backup-test::server' do
           pltfrm.dup.merge(step_into: ['rdiff-backup'])
         )
       end
-      cached(:chef_run) {
-        runner.converge(described_recipe) }
+      cached(:chef_run) { runner.converge(described_recipe) }
       before do
         allow(Chef::EncryptedDataBagItem).to receive(:load).with(
           'rdiff-backup-secrets', 'secrets'
@@ -40,14 +39,13 @@ describe 'rdiff-backup-test::server' do
         )
       end
       it do
-        expect(chef_run).to add_nrpe_check('check_rdiff_job_test1')
-        .with(
+        expect(chef_run).to add_nrpe_check('check_rdiff_job_test1').with(
           command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
-                ' -w 16 '\
-                '-c 18 '\
-                '-r /you/are/my/only/hope '\
-                '-p 24 '\
-                '-l 800000000'
+            ' -w 16 '\
+            '-c 18 '\
+            '-r /you/are/my/only/hope '\
+            '-p 24 '\
+            '-l 800000000'
         )
       end
       # line 100
