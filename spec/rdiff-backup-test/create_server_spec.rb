@@ -16,6 +16,9 @@ describe 'rdiff-backup-test::server' do
           key: 'secret-key'
         )
       end
+      it do
+        expect(chef_run).to create_rdiff_backup('test1')
+      end
       # Tests lines [74:end] of the libraries/rdiff-backup.rb file
       it do
         expect(chef_run).to include_recipe('yum-epel')

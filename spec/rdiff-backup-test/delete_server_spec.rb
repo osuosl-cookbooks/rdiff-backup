@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe 'rdiff-backup-test::server' do
+describe 'rdiff-backup-test::delete_server' do
   [CENTOS_6_OPTS, CENTOS_7_OPTS].each do |pltfrm|
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
@@ -8,40 +8,44 @@ describe 'rdiff-backup-test::server' do
           pltfrm.dup.merge(step_into: ['rdiff-backup']) # , ['nrpe-check'])
         )
       end
-      let(:chef_run) { runner.converge(described_recipe) }
-
+      cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        stub_command('secrets').and_return(true)
-        Chef::EncryptedDataBagItem.stub(:load).with('rdiff-backup-secrets',
-                                                    'secrets').and_return(
-                                                      key: 'secret-key'
-                                                    )
+        allow(Chef::EncryptedDataBagItem).to receive(:load).with(
+          'rdiff-backup-secrets', 'secrets'
+        ).and_return(
+          key: 'secret-key'
+        )
       end
 
-      # Delete
-      context 'Delete: nrpe is true' do
-        it do
-          expect(chef_run).to remove_nrpe_check('check_rdiff_job_test2')
-        end
+      it do
+        expect(chef_run).to delete_rdiff_backup('delete_tatooine')
+      end
+      it do
+        expect(chef_run).to_not delete_rdiff_backup('create_Endor')
+      end
 
+      it do
+        expect(chef_run).to remove_nrpe_check(
+          'check_rdiff_job_delete_tatooine'
+        )
+      end
+      it do
+        expect(chef_run).to delete_file(
+          '/home/jarjarbinks/exclude/192.168.60.25/_help_me_boba_fett'
+        )
+      end
+      it do
+        expect(chef_run).to delete_file(
+          '/home/jarjarbinks/scripts/192.168.60.25/_help_me_boba_fett'
+        )
+      end
+      it do
+        expect(chef_run).to delete_cron('delete_tatooine')
+      end
+      %w(/home/rdiff-backup-server/exclude/192.168.60.25
+         /home/rdiff-backup-server/scripts/192.168.60.25).each do |d|
         it do
-          expect(chef_run).to delete_file(
-            '/home/rdiff-backup-server/exclude/192.168.60.11/_help_me_obiwan'
-          )
-        end
-        it do
-          expect(chef_run).to delete_file(
-            '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
-          )
-        end
-        it do
-          expect(chef_run).to delete_cron('test2')
-        end
-        %w(/home/rdiff-backup-server/exclude/192.168.60.11
-           /home/rdiff-backup-server/scripts/192.168.60.11).each do |d|
-          it do
-            expect(chef_run).to delete_directory(d)
-          end
+          expect(chef_run).to delete_directory(d)
         end
       end
     end
