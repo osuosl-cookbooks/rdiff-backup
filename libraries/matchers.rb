@@ -1,5 +1,6 @@
 if defined?(ChefSpec)
   ChefSpec.define_matcher(:rdiff_backup)
+
   def create_rdiff_backup(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :rdiff_backup,
@@ -7,6 +8,7 @@ if defined?(ChefSpec)
       resource_name
     )
   end
+
   def delete_rdiff_backup(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :rdiff_backup,
@@ -14,6 +16,7 @@ if defined?(ChefSpec)
       resource_name
     )
   end
+
   def remove_nrpe_check(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :nrpe_check,
@@ -21,6 +24,7 @@ if defined?(ChefSpec)
       resource_name
     )
   end
+
   def add_nrpe_check(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :nrpe_check,
@@ -28,6 +32,7 @@ if defined?(ChefSpec)
       resource_name
     )
   end
+
   def create_ssh_user(resource_name)
     ChefSpec::Matchers::ResourceMatcher.new(
       :ssh_user_private_key,

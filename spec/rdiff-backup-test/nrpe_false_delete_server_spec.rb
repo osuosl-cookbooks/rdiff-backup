@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe 'rdiff-backup-test::delete_server' do
+describe 'rdiff-backup-test::nrpe_false_delete_server' do
   [CENTOS_6_OPTS, CENTOS_7_OPTS].each do |pltfrm|
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
@@ -20,9 +20,9 @@ describe 'rdiff-backup-test::delete_server' do
       it do
         expect(chef_run).to delete_rdiff_backup('delete_tatooine')
       end
-      # nrpe defaults to true
+      # nrpe has been set to false
       it do
-        expect(chef_run).to remove_nrpe_check(
+        expect(chef_run).to_not remove_nrpe_check(
           'check_rdiff_job_delete_tatooine'
         )
       end

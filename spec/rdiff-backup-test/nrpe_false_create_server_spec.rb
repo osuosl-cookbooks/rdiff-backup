@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe 'rdiff-backup-test::create_server' do
+describe 'rdiff-backup-test::nrpe_false_create_server' do
   [CENTOS_6_OPTS, CENTOS_7_OPTS].each do |pltfrm|
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
@@ -30,30 +30,17 @@ describe 'rdiff-backup-test::create_server' do
           expect(chef_run).to install_package(p)
         end
       end
-      # lines 77:97, because new_resource.nrpe defaults to true
+      # lines 77:97, when new_resource.nrpe has been set to false
       it do
-        expect(chef_run).to include_recipe('nrpe')
+        expect(chef_run).to_not include_recipe('nrpe')
       end
       it do
-        expect(chef_run).to create_cookbook_file(
+        expect(chef_run).to_not create_cookbook_file(
           chef_run.node['nrpe']['plugin_dir'] + '/check_rdiff'
-        ).with(
-          mode: 0755,
-          owner: chef_run.node['nrpe']['user'],
-          group: chef_run.node['nrpe']['group'],
-          source: 'nagios/plugins/check_rdiff',
-          cookbook: 'rdiff-backup'
         )
       end
       it do
-        expect(chef_run).to add_nrpe_check('check_rdiff_job_test1').with(
-          command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
-            ' -w 16 '\
-            '-c 18 '\
-            '-r /you/are/my/only/hope '\
-            '-p 24 '\
-            '-l 800000000'
-        )
+        expect(chef_run).to_not add_nrpe_check('check_rdiff_job_test1')
       end
       # line 100
       it do

@@ -1,4 +1,5 @@
 rdiff_backup 'test1' do
+  nrpe false
   fqdn '192.168.60.11'
   source '/help/me/obiwan'
   destination '/you/are/my/only/hope'
