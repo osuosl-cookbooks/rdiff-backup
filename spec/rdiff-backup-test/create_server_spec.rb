@@ -18,7 +18,12 @@ describe 'rdiff-backup-test::create_server' do
       end
 
       it do
-        expect(chef_run).to create_rdiff_backup('test1')
+        expect(chef_run).to create_rdiff_backup('test1').with(
+          fqdn: '192.168.60.11',
+          source: '/help/me/obiwan',
+          destination: '/you/are/my/only/hope',
+          exclude: ['**/darth-vader', '/help/me/obiwan/emperor-palpatine']
+        )
       end
       # Tests lines [74:end] of the libraries/rdiff-backup.rb file
       it do
@@ -78,7 +83,7 @@ describe 'rdiff-backup-test::create_server' do
       it do
         expect(chef_run).to create_directory('/var/rdiff-backup/locks').with(
           owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server' || 'rdiff-backup-server',
+          group: 'rdiff-backup-server',
           mode: 0755,
           recursive: true
         )
