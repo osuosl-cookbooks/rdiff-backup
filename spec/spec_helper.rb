@@ -11,6 +11,6 @@ CENTOS_7_OPTS = {
 
 CENTOS_6_OPTS = {
   platform: 'centos',
-  version: '6.8',
+  version: '6.7',
   log_level: :fatal
 }.freeze
