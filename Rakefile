@@ -10,6 +10,10 @@ require 'openssl'
 
 snakeoil_file_path = 'test/integration/data_bags/certificates/snakeoil.json'
 encrypted_data_bag_secret_path = 'test/integration/encrypted_data_bag_secret'
+current_dir = File.dirname(__FILE__)
+client_cfg = "#{current_dir}/test/chef-config"
+client_options = '--force-formatter -z ' \
+    "--config #{client_cfg}/knife.rb"
 
 ##
 # Run command wrapper
@@ -123,6 +127,42 @@ desc 'Run RSpec (unit) tests'
 task :unit do
     run_command('rspec')
 end
+
+PROV_PATH = 'test/integration/provisioning'
+
+task :destroy_all do
+  Rake::Task[:destroy_machines].invoke
+  run_command('rm -rf Gemfile.lock && rm -rf Berksfile.lock && ' \
+    'rm -rf cookbooks/')
+end
+
+desc 'Destroy machines'
+task :destroy_machines do
+  run_command("chef-client #{client_options} #{PROV_PATH}/destroy_all.rb")
+end
+
+desc 'Vendor your cookbooks/'
+task :berks_vendor do
+  run_command('berks vendor cookbooks')
+end
+
+desc 'Create Chef Key'
+task :create_key do
+  unless File.exist?("#{client_cfg}/validator.pem")
+    sh %(chef exec ruby -e "require 'openssl';
+File.binwrite('#{client_cfg}/validator.pem',
+OpenSSL::PKey::RSA.new(2048).to_pem)")
+  end
+end
+
+desc 'Rdiff-backup server/client'
+task server_client: [:create_key, :berks_vendor] do
+  run_command("chef-client #{client_options} " \
+    "#{PROV_PATH}/server_client.rb")
+end
+
+desc 'Blow everything away'
+task clean: [:destroy_all]
 
 desc 'Run all tests'
 task test: [:style, :lint, :unit]
