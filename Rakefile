@@ -125,7 +125,7 @@ end
 
 desc 'Run RSpec (unit) tests'
 task :unit do
-    run_command('rspec')
+    run_command('rspec --format documentation --color')
 end
 
 PROV_PATH = 'test/integration/provisioning'
