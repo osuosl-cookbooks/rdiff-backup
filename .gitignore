@@ -19,8 +19,10 @@ bin/*
 .kitchen/
 .kitchen.local.yml
 
-.chef/*.pem
-.chef/local-mode-cache/
-/clients/
-/nodes/
-/vms/
+# chef-provisioner
+test/chef-config/*.pem
+test/chef-config/local-mode-cache/
+clients/*
+cookbooks/*
+nodes/*
+vms/*
