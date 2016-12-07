@@ -25,17 +25,14 @@ describe 'rdiff-backup-test::create_server' do
           exclude: ['**/darth-vader', '/help/me/obiwan/emperor-palpatine']
         )
       end
-      # Tests lines [74:end] of the libraries/rdiff-backup.rb file
       it do
         expect(chef_run).to include_recipe('yum-epel')
       end
-      # line 76
       %w(rdiff-backup cronolog).each do |p|
         it do
           expect(chef_run).to install_package(p)
         end
       end
-      # lines 77:97, because new_resource.nrpe defaults to true
       it do
         expect(chef_run).to include_recipe('nrpe')
       end
@@ -60,16 +57,12 @@ describe 'rdiff-backup-test::create_server' do
             '-l 800000000'
         )
       end
-      # line 100
       it do
         expect(chef_run).to create_user('rdiff-backup-server')
       end
-      # line 101
       it do
-        # group == owner, so group is NOT created here
         expect(chef_run).to_not create_group('rdiff-backup-server')
       end
-      # lines 102:108
       it do
         expect(chef_run).to install_sudo('rdiff-backup-server').with(
           user: 'rdiff-backup-server',
@@ -79,7 +72,6 @@ describe 'rdiff-backup-test::create_server' do
                      '--server --restrict-read-only /']
         )
       end
-      # lines 109:114
       it do
         expect(chef_run).to create_directory('/var/rdiff-backup/locks').with(
           owner: 'rdiff-backup-server',
@@ -88,7 +80,6 @@ describe 'rdiff-backup-test::create_server' do
           recursive: true
         )
       end
-      # lines 115:119
       it do
         expect(chef_run).to create_directory(
           '/home/rdiff-backup-server/.ssh'
@@ -98,14 +89,11 @@ describe 'rdiff-backup-test::create_server' do
           mode: 0700
         )
       end
-      # lines 120:123
-      # undefined method create_ssh_user
       it do
         expect(chef_run).to create_ssh_user('id_rsa').with(
           user: 'rdiff-backup-server'
         )
       end
-      # lines 124:129
       it do
         expect(chef_run).to create_directory('/var/log/rdiff-backup').with(
           owner: 'rdiff-backup-server',
@@ -114,7 +102,6 @@ describe 'rdiff-backup-test::create_server' do
           recursive: true
         )
       end
-      # lines 130:146
       %w(/you/are/my/only/hope
          /home/rdiff-backup-server/exclude/192.168.60.11
          /home/rdiff-backup-server/scripts/192.168.60.11).each do |d|
@@ -126,7 +113,6 @@ describe 'rdiff-backup-test::create_server' do
           )
         end
       end
-      # lines 147:156
       it do
         expect(chef_run).to create_file(
           '/home/rdiff-backup-server/exclude/192.168.60.11/_help_me_obiwan'
@@ -139,7 +125,6 @@ describe 'rdiff-backup-test::create_server' do
           ].join("\n")
         )
       end
-      # lines 157:178
       it do
         expect(chef_run).to create_template(
           '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
@@ -161,7 +146,6 @@ describe 'rdiff-backup-test::create_server' do
           }
         )
       end
-      # lines 179:189
       it do
         expect(chef_run).to create_cron('test1').with(
           minute: '0',

@@ -5,7 +5,7 @@ describe 'rdiff-backup-test::nrpe_false_delete_server' do
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
         ChefSpec::SoloRunner.new(
-          pltfrm.dup.merge(step_into: ['rdiff-backup']) # , ['nrpe-check'])
+          pltfrm.dup.merge(step_into: ['rdiff-backup'])
         )
       end
       cached(:chef_run) { runner.converge(described_recipe) }
@@ -20,7 +20,6 @@ describe 'rdiff-backup-test::nrpe_false_delete_server' do
       it do
         expect(chef_run).to delete_rdiff_backup('delete_tatooine')
       end
-      # nrpe has been set to false
       it do
         expect(chef_run).to_not remove_nrpe_check(
           'check_rdiff_job_delete_tatooine'

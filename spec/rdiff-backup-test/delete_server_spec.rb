@@ -5,7 +5,7 @@ describe 'rdiff-backup-test::delete_server' do
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
         ChefSpec::SoloRunner.new(
-          pltfrm.dup.merge(step_into: ['rdiff-backup']) # , ['nrpe-check'])
+          pltfrm.dup.merge(step_into: ['rdiff-backup'])
         )
       end
       cached(:chef_run) { runner.converge(described_recipe) }
