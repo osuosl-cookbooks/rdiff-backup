@@ -32,7 +32,7 @@ class Chef
   end
   class Provider
     class RdiffBackup < LWRPBase
-      action :delete do
+      action :delete do ## rubocop:disable BlockLength
         if new_resource.nrpe # ~FC023
           nrpe_check "check_rdiff_job_#{new_resource.name}" do
             action :remove
@@ -71,7 +71,7 @@ class Chef
           end
         end
       end
-      action :create do
+      action :create do ## rubocop:disable BlockLength
         include_recipe 'yum-epel'
         %w(rdiff-backup cronolog).each { |p| package p }
         if new_resource.nrpe
