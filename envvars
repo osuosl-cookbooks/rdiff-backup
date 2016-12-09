@@ -1,0 +1,4 @@
+cookbook=rdiff-backup
+version=2.0.7
+envs=~
+pr_link=https://github.com/osuosl-cookbooks/rdiff-backup/pull/28

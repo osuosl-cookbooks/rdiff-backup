@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+2.0.8 (2016-12-09)
+------------------
+- Rdiff backup tests
+
 2.0.7 (2016-11-28)
 ------------------
 - Remove unneeded nagios plugin dir attribute
