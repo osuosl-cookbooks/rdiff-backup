@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+2.0.9 (2016-12-13)
+------------------
+- Check if ChefSpec is defined before defining custom matchers.
+
 2.0.8 (2016-12-09)
 ------------------
 - Rdiff backup tests
