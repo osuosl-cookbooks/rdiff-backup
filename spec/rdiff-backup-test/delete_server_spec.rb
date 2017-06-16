@@ -26,15 +26,15 @@ describe 'rdiff-backup-test::delete_server' do
           'check_rdiff_job_delete_tatooine'
         )
       end
-      it do
-        expect(chef_run).to delete_file(
-          '/home/jarjarbinks/exclude/192.168.60.25/_help_me_boba_fett'
-        )
-      end
-      it do
-        expect(chef_run).to delete_file(
-          '/home/jarjarbinks/scripts/192.168.60.25/_help_me_boba_fett'
-        )
+      %w(
+        /home/jarjarbinks/exclude/192.168.60.25/_help_me_boba_fett
+        /home/jarjarbinks/scripts/192.168.60.25/_help_me_boba_fett
+        /home/rdiff-backup-server/exclude/192.168.60.12/_test2
+        /home/rdiff-backup-server/scripts/192.168.60.12/_test2
+      ).each do |f|
+        it do
+          expect(chef_run).to delete_file(f)
+        end
       end
       it do
         expect(chef_run).to delete_cron('delete_tatooine')
@@ -43,6 +43,14 @@ describe 'rdiff-backup-test::delete_server' do
          /home/jarjarbinks/scripts/192.168.60.25).each do |d|
         it do
           expect(chef_run).to delete_directory(d)
+        end
+      end
+      %w(
+        /home/rdiff-backup-server/exclude/192.168.60.12/bar
+        /home/rdiff-backup-server/scripts/192.168.60.12/bar
+      ).each do |f|
+        it do
+          expect(chef_run).to create_file(f)
         end
       end
     end
