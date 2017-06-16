@@ -104,6 +104,7 @@ describe 'rdiff-backup-test::create_server' do
         ).with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server' || 'rdiff-backup-server',
+          recursive: true,
           mode: 0700
         )
       end
