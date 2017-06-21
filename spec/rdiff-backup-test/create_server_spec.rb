@@ -152,7 +152,7 @@ describe 'rdiff-backup-test::create_server' do
           '/home/rdiff-backup-server/exclude/192.168.60.12/_test2'
         ).with(
           owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server' || 'rdiff-backup-server',
+          group: 'rdiff-backup-server',
           mode: 0644,
           content: [
             '**/foo', '/bar/foo'
