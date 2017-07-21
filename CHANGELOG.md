@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+2.0.10 (2017-07-21)
+-------------------
+- Recursively delete scripts dir when removing backup. 
+
 2.0.9 (2016-12-13)
 ------------------
 - Check if ChefSpec is defined before defining custom matchers.
