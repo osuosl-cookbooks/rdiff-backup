@@ -4,3 +4,10 @@ rdiff_backup 'test1' do
   destination '/you/are/my/only/hope'
   exclude ['**/darth-vader', '/help/me/obiwan/emperor-palpatine']
 end
+
+rdiff_backup 'test2' do
+  fqdn '192.168.60.12'
+  source '/test2'
+  destination '/backups/test2'
+  exclude ['**/foo', '/bar/foo']
+end

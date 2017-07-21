@@ -67,6 +67,7 @@ class Chef
                       new_resource.fqdn)
         ].each do |d|
           directory d do
+            recursive true
             action :delete
           end
         end
@@ -115,6 +116,7 @@ class Chef
         directory ::File.join('/home', new_resource.owner, '.ssh') do
           owner new_resource.owner
           group new_resource.group || new_resource.owner
+          recursive true
           mode 0700
         end
         ssh_user_private_key 'id_rsa' do
