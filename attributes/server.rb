@@ -8,7 +8,7 @@ default['rdiff-backup']['server']['restrict-to-environments'] = []
 default['rdiff-backup']['server']['mailto'] = ''
 default['rdiff-backup']['server']['nagios'] = {
   'alerts' => true,
-  'plugin-dir' => '/usr/lib64/nagios/plugins'
+  'plugin-dir' => '/usr/lib64/nagios/plugins',
 }
 
 override['authorization']['sudo']['include_sudoers_d'] = true

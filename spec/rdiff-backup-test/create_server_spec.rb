@@ -176,7 +176,7 @@ describe 'rdiff-backup-test::create_server' do
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
             port: 22,
-            args: ''
+            args: '',
           }
         )
       end
@@ -197,7 +197,7 @@ describe 'rdiff-backup-test::create_server' do
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
             port: 22,
-            args: ''
+            args: '',
           }
         )
       end

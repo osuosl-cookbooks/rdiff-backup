@@ -8,10 +8,10 @@ machine_batch do
     machine name do
       machine_options vagrant_options: {
         'vm.box' => 'bento/centos-7.2',
-        'vm.box_version' => '2.2.9'
+        'vm.box_version' => '2.2.9',
       },
                       convergence_options: {
-                        chef_version: '12.10.24'
+                        chef_version: '12.10.24',
                       }
       add_machine_options vagrant_config: <<-EOF
     config.vm.network "private_network", ip: "192.168.60.#{ip_suff}"

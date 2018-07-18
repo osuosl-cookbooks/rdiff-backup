@@ -64,7 +64,7 @@ class Chef
           ::File.join('/home',
                       new_resource.owner,
                       'scripts',
-                      new_resource.fqdn)
+                      new_resource.fqdn),
         ].each do |d|
           directory d do
             recursive true
@@ -138,7 +138,7 @@ class Chef
           ::File.join('/home',
                       new_resource.owner,
                       'scripts',
-                      new_resource.fqdn)
+                      new_resource.fqdn),
         ].each do |d|
           directory d do
             owner new_resource.owner
