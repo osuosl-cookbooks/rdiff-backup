@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+2.0.11 (2018-07-23)
+-------------------
+- Fix cookbook dependency issues
+
 2.0.10 (2017-07-21)
 -------------------
 - Recursively delete scripts dir when removing backup. 
