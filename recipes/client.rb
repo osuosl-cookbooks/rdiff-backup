@@ -27,7 +27,7 @@ client_user = node['rdiff-backup']['client']['user']
 user client_user do
   comment 'User for rdiff-backup client backups'
   shell '/bin/bash'
-  supports manage_home: true
+  manage_home true
   action :nothing
 end.run_action(:create)
 

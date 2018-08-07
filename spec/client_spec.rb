@@ -13,7 +13,7 @@ describe 'rdiff-backup::client' do
         expect(chef_run).to create_user('rdiff-backup-client').with(
           comment: 'User for rdiff-backup client backups',
           shell: '/bin/bash',
-          supports: { manage_home: true },
+          manage_home: true,
           action: [:nothing]
         )
       end
@@ -37,9 +37,9 @@ describe 'rdiff-backup::client' do
         end
       end
       it do
-        expect(chef_run).to install_sudo('rdiff-backup-client').with(
-          user: 'rdiff-backup-client',
-          group: 'rdiff-backup-client',
+        expect(chef_run).to create_sudo('rdiff-backup-client').with(
+          user: %w(rdiff-backup-client),
+          group: %w(%rdiff-backup-client),
           commands: ['/usr/bin/rdiff-backup --server --restrict-read-only /'],
           nopasswd: true
         )

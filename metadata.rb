@@ -9,7 +9,6 @@ issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
 source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
 depends 'ssh-keys'
-depends 'ssh_user'
 depends 'yum'
 depends 'yum-epel'
 depends 'user'

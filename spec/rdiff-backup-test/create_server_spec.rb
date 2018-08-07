@@ -82,9 +82,9 @@ describe 'rdiff-backup-test::create_server' do
         expect(chef_run).to_not create_group('rdiff-backup-server')
       end
       it do
-        expect(chef_run).to install_sudo('rdiff-backup-server').with(
-          user: 'rdiff-backup-server',
-          group: 'rdiff-backup-server',
+        expect(chef_run).to create_sudo('rdiff-backup-server').with(
+          user: %w(rdiff-backup-server),
+          group: %w(%rdiff-backup-server),
           nopasswd: true,
           commands: ['/usr/bin/sudo rdiff-backup '\
                      '--server --restrict-read-only /']
@@ -109,8 +109,9 @@ describe 'rdiff-backup-test::create_server' do
         )
       end
       it do
-        expect(chef_run).to create_ssh_user('id_rsa').with(
-          user: 'rdiff-backup-server'
+        expect(chef_run).to create_file('/home/rdiff-backup-server/.ssh/id_rsa').with(
+          mode: 0600,
+          owner: 'rdiff-backup-server'
         )
       end
       it do

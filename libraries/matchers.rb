@@ -14,4 +14,12 @@ if defined?(ChefSpec)
       resource_name
     )
   end
+
+  def create_sudo(resource_name)
+    ChefSpec::Matchers::ResourceMatcher.new(
+      :sudo,
+      :create,
+      resource_name
+    )
+  end
 end
