@@ -65,8 +65,7 @@ action :create do
     end
   end
 
-  secrets = ::Chef::EncryptedDataBagItem.load('rdiff-backup-secrets',
-                                              'secrets')
+  secrets = data_bag_item('rdiff-backup-secrets', 'secrets')
 
   user new_resource.owner unless resource_exists(:linux_user, new_resource.owner) # ~FC023
 

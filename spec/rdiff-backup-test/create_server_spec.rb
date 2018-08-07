@@ -10,9 +10,7 @@ describe 'rdiff-backup-test::create_server' do
       end
       cached(:chef_run) { runner.converge(described_recipe) }
       before do
-        allow(Chef::EncryptedDataBagItem).to receive(:load).with(
-          'rdiff-backup-secrets', 'secrets'
-        ).and_return(
+        stub_data_bag_item('rdiff-backup-secrets', 'secrets').and_return(
           key: 'secret-key'
         )
       end

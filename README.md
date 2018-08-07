@@ -16,7 +16,6 @@ Requirements
 
 ## Optional Cookbooks:
 
-* `partial_search` (for more efficient chef search)
 * `sudo` (for reading files to back up and so the nrpe user can read the status of repos)
 * `nrpe` (for nagios alerts regarding backup statuses)
 
