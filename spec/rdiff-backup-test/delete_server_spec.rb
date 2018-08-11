@@ -20,15 +20,17 @@ describe 'rdiff-backup-test::delete_server' do
       it do
         expect(chef_run).to delete_rdiff_backup('delete_tatooine')
       end
+
       # nrpe defaults to true
       it do
         expect(chef_run).to remove_nrpe_check(
           'check_rdiff_job_delete_tatooine'
         )
       end
+
       %w(
-        /home/jarjarbinks/exclude/192.168.60.25/_help_me_boba_fett
-        /home/jarjarbinks/scripts/192.168.60.25/_help_me_boba_fett
+        /home/rdiff-backup-server/exclude/192.168.60.25/_help_me_boba_fett
+        /home/rdiff-backup-server/scripts/192.168.60.25/_help_me_boba_fett
         /home/rdiff-backup-server/exclude/192.168.60.12/_test2
         /home/rdiff-backup-server/scripts/192.168.60.12/_test2
       ).each do |f|
@@ -36,15 +38,18 @@ describe 'rdiff-backup-test::delete_server' do
           expect(chef_run).to delete_file(f)
         end
       end
+
       it do
         expect(chef_run).to delete_cron('delete_tatooine')
       end
-      %w(/home/jarjarbinks/exclude/192.168.60.25
-         /home/jarjarbinks/scripts/192.168.60.25).each do |d|
+
+      %w(/home/rdiff-backup-server/exclude/192.168.60.25
+         /home/rdiff-backup-server/scripts/192.168.60.25).each do |d|
         it do
           expect(chef_run).to delete_directory(d)
         end
       end
+
       %w(
         /home/rdiff-backup-server/exclude/192.168.60.12/bar
         /home/rdiff-backup-server/scripts/192.168.60.12/bar

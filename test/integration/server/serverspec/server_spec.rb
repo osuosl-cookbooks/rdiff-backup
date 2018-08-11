@@ -2,12 +2,64 @@ require 'serverspec'
 
 set :backend, :exec
 
-describe package('rdiff-backup') do
-  it { should be_installed }
+%w(
+  cronolog
+  rdiff-backup
+).each do |p|
+  describe package p do
+    it { should be_installed }
+  end
+end
+
+describe file('/usr/lib64/nagios/plugins/check_rdiff') do
+  it { should exist }
+  it { should be_mode 755 }
+  it { should be_owned_by 'nrpe' }
+  it { should be_grouped_into 'nrpe' }
+  its(:content) { should match(/rdiff_check.pl/) }
 end
 
 describe user('rdiff-backup-server') do
   it { should exist }
+end
+
+describe group('rdiff-backup-server') do
+  it { should exist }
+end
+
+describe file('/etc/sudoers.d/rdiff-backup-server') do
+  it { should exist }
+  its(:content) { should match(/NOPASSWD/) }
+end
+
+describe file('/var/rdiff-backup/locks') do
+  it { should exist }
+  it { should be_directory }
+  it { should be_mode 755 }
+  it { should be_owned_by 'rdiff-backup-server' }
+  it { should be_grouped_into 'rdiff-backup-server' }
+end
+
+describe file('/home/rdiff-backup-server/.ssh') do
+  it { should exist }
+  it { should be_directory }
+  it { should be_mode 700 }
+  it { should be_owned_by 'rdiff-backup-server' }
+  it { should be_grouped_into 'rdiff-backup-server' }
+end
+
+describe file('/home/rdiff-backup-server/.ssh/id_rsa') do
+  it { should exist }
+  it { should be_mode 600 }
+  it { should be_owned_by 'rdiff-backup-server' }
+  its(:content) { should match(/BEGIN RSA PRIVATE KEY/) }
+end
+
+describe file('/var/log/rdiff-backup') do
+  it { should exist }
+  it { should be_mode 755 }
+  it { should be_owned_by 'rdiff-backup-server' }
+  it { should be_grouped_into 'rdiff-backup-server' }
 end
 
 describe file('/home/rdiff-backup-server/exclude/192.168.60.11/_help_me_obiwan') do

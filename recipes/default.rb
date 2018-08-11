@@ -18,3 +18,5 @@
 #
 
 include_recipe 'rdiff-backup::client'
+
+package 'rdiff-backup'

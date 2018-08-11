@@ -12,6 +12,10 @@ describe 'rdiff-backup::default' do
       it do
         expect(chef_run).to include_recipe('rdiff-backup::client')
       end
+
+      it do
+        expect(chef_run).to install_package('rdiff-backup')
+      end
     end
   end
 end
