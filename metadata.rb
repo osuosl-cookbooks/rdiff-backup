@@ -15,7 +15,7 @@ depends 'yum-epel'
 depends 'user'
 depends 'partial_search'
 depends 'sudo', '< 3.0.0'
-depends 'nagios', '< 8.0.0'
+depends 'nagios'
 depends 'nrpe'
 
 supports 'centos', '~> 6.0'
