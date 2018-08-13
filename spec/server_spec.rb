@@ -15,6 +15,10 @@ describe 'rdiff-backup::server' do
       end
 
       it do
+        expect(chef_run).to include_recipe('rdiff-backup')
+      end
+
+      it do
         expect(chef_run).to install_package('cronolog')
       end
 

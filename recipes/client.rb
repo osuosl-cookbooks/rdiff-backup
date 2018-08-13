@@ -17,9 +17,7 @@
 # limitations under the License.
 #
 # Install rdiff-backup.
-include_recipe 'yum'
-include_recipe 'yum-epel'
-package 'rdiff-backup'
+include_recipe 'rdiff-backup'
 
 client_user = node['rdiff-backup']['client']['user']
 

@@ -24,14 +24,11 @@ describe 'rdiff-backup::client' do
         )
       end
       it do
-        expect(chef_run).to install_package('rdiff-backup')
-      end
-      it do
         expect(chef_run.node['ssh_keys']['rdiff-backup-client']).to eq(
           ['rdiff-backup-client']
         )
       end
-      %w(yum yum-epel ssh-keys).each do |r|
+      %w(rdiff-backup ssh-keys).each do |r|
         it do
           expect(chef_run).to include_recipe(r)
         end

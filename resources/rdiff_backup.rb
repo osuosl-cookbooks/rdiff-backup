@@ -23,7 +23,6 @@ property :cron_weekday, [String, Integer], default: '*'
 property :cron_month, [String, Integer], default: '*'
 
 action :create do
-  include_recipe 'yum-epel'
   include_recipe 'rdiff-backup::server'
 
   if node['rdiff-backup']['server']['nrpe']
