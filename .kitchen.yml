@@ -10,6 +10,5 @@ suites:
       - recipe[rdiff-backup::client]
   - name: server
     run_list:
-      - recipe[nrpe::default]
       - recipe[rdiff-backup-test::create_server]
       - recipe[rdiff-backup-test::delete_server]

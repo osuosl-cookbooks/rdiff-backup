@@ -22,6 +22,8 @@ include_recipe 'rdiff-backup'
 package 'cronolog'
 
 if node['rdiff-backup']['server']['nrpe'] # ~FC023
+  include_recipe 'nrpe'
+
   cookbook_file ::File.join(node['nrpe']['plugin_dir'], 'check_rdiff') do
     mode 0755
     cookbook 'rdiff-backup'
