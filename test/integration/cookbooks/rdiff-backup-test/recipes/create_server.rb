@@ -1,3 +1,5 @@
+include_recipe 'rdiff-backup::server'
+
 rdiff_backup 'test1' do
   fqdn '192.168.60.11'
   source '/help/me/obiwan'
