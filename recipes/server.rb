@@ -41,8 +41,7 @@ sudo node['rdiff-backup']['server']['user'] do
   user node['rdiff-backup']['server']['user']
   group node['rdiff-backup']['server']['group']
   nopasswd true
-  commands ['/usr/bin/sudo rdiff-backup '\
-            '--server --restrict-read-only /']
+  commands ['/usr/bin/sudo rdiff-backup --server --restrict-read-only /']
 end
 
 directory node['rdiff-backup']['server']['lock_dir'] do

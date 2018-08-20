@@ -41,14 +41,8 @@ action :create do
 
   [
     new_resource.destination,
-    ::File.join('/home',
-                node['rdiff-backup']['server']['user'],
-                'exclude',
-                new_resource.fqdn),
-    ::File.join('/home',
-                node['rdiff-backup']['server']['user'],
-                'scripts',
-                new_resource.fqdn),
+    ::File.join('/home', node['rdiff-backup']['server']['user'], 'exclude', new_resource.fqdn),
+    ::File.join('/home', node['rdiff-backup']['server']['user'], 'scripts', new_resource.fqdn),
   ].each do |d|
     directory d do
       owner node['rdiff-backup']['server']['user']
@@ -133,14 +127,8 @@ action :delete do
   end
 
   [
-    ::File.join('/home',
-                node['rdiff-backup']['server']['user'],
-                'exclude',
-                new_resource.fqdn),
-    ::File.join('/home',
-                node['rdiff-backup']['server']['user'],
-                'scripts',
-                new_resource.fqdn),
+    ::File.join('/home', node['rdiff-backup']['server']['user'], 'exclude', new_resource.fqdn),
+    ::File.join('/home', node['rdiff-backup']['server']['user'], 'scripts', new_resource.fqdn),
   ].each do |d|
     directory d do
       recursive true
