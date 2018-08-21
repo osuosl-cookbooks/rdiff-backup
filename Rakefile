@@ -12,7 +12,7 @@ snakeoil_file_path = 'test/integration/data_bags/certificates/snakeoil.json'
 encrypted_data_bag_secret_path = 'test/integration/encrypted_data_bag_secret'
 current_dir = File.dirname(__FILE__)
 client_cfg = "#{current_dir}/test/chef-config"
-client_options = '--force-formatter -z ' \
+client_options = '--force-formatter -z --local-mode --listen ' \
     "--config #{client_cfg}/knife.rb"
 
 ##
