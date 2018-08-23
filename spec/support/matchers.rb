@@ -16,12 +16,4 @@ if defined?(ChefSpec)
       resource_name
     )
   end
-
-  def create_ssh_user(resource_name)
-    ChefSpec::Matchers::ResourceMatcher.new(
-      :ssh_user_private_key,
-      :create,
-      resource_name
-    )
-  end
 end

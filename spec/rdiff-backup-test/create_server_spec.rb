@@ -9,10 +9,10 @@ describe 'rdiff-backup-test::create_server' do
         )
       end
       cached(:chef_run) { runner.converge(described_recipe) }
+
       before do
-        allow(Chef::EncryptedDataBagItem).to receive(:load).with(
-          'rdiff-backup-secrets', 'secrets'
-        ).and_return(
+        stub_data_bag_item('users', 'rdiff-backup-client').and_return(nil)
+        stub_data_bag_item('rdiff-backup-secrets', 'secrets').and_return(
           key: 'secret-key'
         )
       end
@@ -25,6 +25,7 @@ describe 'rdiff-backup-test::create_server' do
           exclude: ['**/darth-vader', '/help/me/obiwan/emperor-palpatine']
         )
       end
+
       it do
         expect(chef_run).to create_rdiff_backup('test2').with(
           fqdn: '192.168.60.12',
@@ -33,28 +34,20 @@ describe 'rdiff-backup-test::create_server' do
           exclude: ['**/foo', '/bar/foo']
         )
       end
-      it do
-        expect(chef_run).to include_recipe('yum-epel')
-      end
-      %w(rdiff-backup cronolog).each do |p|
+
+      %w(
+        yum-epel
+        rdiff-backup::server
+      ).each do |r|
         it do
-          expect(chef_run).to install_package(p)
+          expect(chef_run).to include_recipe(r)
         end
       end
+
       it do
         expect(chef_run).to include_recipe('nrpe')
       end
-      it do
-        expect(chef_run).to create_cookbook_file(
-          chef_run.node['nrpe']['plugin_dir'] + '/check_rdiff'
-        ).with(
-          mode: 0755,
-          owner: chef_run.node['nrpe']['user'],
-          group: chef_run.node['nrpe']['group'],
-          source: 'nagios/plugins/check_rdiff',
-          cookbook: 'rdiff-backup'
-        )
-      end
+
       it do
         expect(chef_run).to add_nrpe_check('check_rdiff_job_test1').with(
           command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
@@ -65,6 +58,7 @@ describe 'rdiff-backup-test::create_server' do
             '-l 800000000'
         )
       end
+
       it do
         expect(chef_run).to add_nrpe_check('check_rdiff_job_test2').with(
           command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
@@ -75,52 +69,7 @@ describe 'rdiff-backup-test::create_server' do
             '-l 800000000'
         )
       end
-      it do
-        expect(chef_run).to create_user('rdiff-backup-server')
-      end
-      it do
-        expect(chef_run).to_not create_group('rdiff-backup-server')
-      end
-      it do
-        expect(chef_run).to install_sudo('rdiff-backup-server').with(
-          user: 'rdiff-backup-server',
-          group: 'rdiff-backup-server',
-          nopasswd: true,
-          commands: ['/usr/bin/sudo rdiff-backup '\
-                     '--server --restrict-read-only /']
-        )
-      end
-      it do
-        expect(chef_run).to create_directory('/var/rdiff-backup/locks').with(
-          owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server',
-          mode: 0755,
-          recursive: true
-        )
-      end
-      it do
-        expect(chef_run).to create_directory(
-          '/home/rdiff-backup-server/.ssh'
-        ).with(
-          owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server' || 'rdiff-backup-server',
-          recursive: true,
-          mode: 0700
-        )
-      end
-      it do
-        expect(chef_run).to create_ssh_user('id_rsa').with(
-          user: 'rdiff-backup-server'
-        )
-      end
-      it do
-        expect(chef_run).to create_directory('/var/log/rdiff-backup').with(
-          owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server',
-          mode: 0755,
-          recursive: true
-        )
-      end
+
       %w(/you/are/my/only/hope
          /backups/test2
          /home/rdiff-backup-server/exclude/192.168.60.11
@@ -135,6 +84,7 @@ describe 'rdiff-backup-test::create_server' do
           )
         end
       end
+
       it do
         expect(chef_run).to create_file(
           '/home/rdiff-backup-server/exclude/192.168.60.11/_help_me_obiwan'
@@ -147,6 +97,7 @@ describe 'rdiff-backup-test::create_server' do
           ].join("\n")
         )
       end
+
       it do
         expect(chef_run).to create_file(
           '/home/rdiff-backup-server/exclude/192.168.60.12/_test2'
@@ -159,6 +110,7 @@ describe 'rdiff-backup-test::create_server' do
           ].join("\n")
         )
       end
+
       it do
         expect(chef_run).to create_template(
           '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
@@ -176,10 +128,11 @@ describe 'rdiff-backup-test::create_server' do
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
             port: 22,
-            args: ''
+            args: '',
           }
         )
       end
+
       it do
         expect(chef_run).to create_template(
           '/home/rdiff-backup-server/scripts/192.168.60.12/_test2'
@@ -197,10 +150,11 @@ describe 'rdiff-backup-test::create_server' do
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
             port: 22,
-            args: ''
+            args: '',
           }
         )
       end
+
       it do
         expect(chef_run).to create_cron('test1').with(
           minute: '0',
@@ -213,6 +167,7 @@ describe 'rdiff-backup-test::create_server' do
           '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
         )
       end
+
       it do
         expect(chef_run).to create_cron('test2').with(
           minute: '0',

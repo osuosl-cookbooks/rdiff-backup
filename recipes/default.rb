@@ -17,4 +17,7 @@
 # limitations under the License.
 #
 
-include_recipe 'rdiff-backup::client'
+include_recipe 'yum'
+include_recipe 'yum-epel'
+
+package 'rdiff-backup'

@@ -12,7 +12,7 @@ snakeoil_file_path = 'test/integration/data_bags/certificates/snakeoil.json'
 encrypted_data_bag_secret_path = 'test/integration/encrypted_data_bag_secret'
 current_dir = File.dirname(__FILE__)
 client_cfg = "#{current_dir}/test/chef-config"
-client_options = '--force-formatter -z ' \
+client_options = '--force-formatter -z --local-mode --listen ' \
     "--config #{client_cfg}/knife.rb"
 
 ##
@@ -30,10 +30,10 @@ end
 #
 def gen_ssl_cert
   name = OpenSSL::X509::Name.new [
-    ['C', 'US'],
-    ['ST', 'Oregon'],
+    %w(C US),
+    %w(ST Oregon),
     ['CN', 'OSU Open Source Lab'],
-    ['DC', 'example']
+    %w(DC example),
   ]
   key = OpenSSL::PKey::RSA.new 2048
 
@@ -49,7 +49,7 @@ def gen_ssl_cert
   cert.issuer = name
   cert.sign(key, OpenSSL::Digest::SHA1.new)
 
-  return cert, key
+  [cert, key]
 end
 
 ##
@@ -92,7 +92,7 @@ directory 'test/integration/data_bags/certificates' => 'test/integration'
 #
 file snakeoil_file_path => [
   'test/integration/data_bags/certificates',
-  'test/integration/encrypted_data_bag_secret'
+  'test/integration/encrypted_data_bag_secret',
 ] do
 
   encrypted_data_bag_secret = Chef::EncryptedDataBagItem.load_secret(
@@ -114,22 +114,23 @@ task snakeoil: snakeoil_file_path
 desc 'Create an Encrypted Databag Secret'
 task secret_file: encrypted_data_bag_secret_path
 
-require 'rubocop/rake_task'
-desc 'Run RuboCop (style) tests'
-RuboCop::RakeTask.new(:style)
+desc 'Run RuboCop (cookstyle) tests'
+task :style do
+  run_command('cookstyle')
+end
 
 desc 'Run FoodCritic (lint) tests'
 task :lint do
-    run_command('foodcritic --epic-fail any .')
+  run_command('foodcritic --epic-fail any .')
 end
 
 desc 'Run RSpec (unit) tests'
 task :unit do
-    run_command('rm -f Berksfile.lock')
-    run_command('rspec')
+  run_command('rm -f Berksfile.lock')
+  run_command('rspec')
 end
 
-PROV_PATH = 'test/integration/provisioning'
+PROV_PATH = 'test/integration/provisioning'.freeze
 
 task :destroy_all do
   Rake::Task[:destroy_machines].invoke

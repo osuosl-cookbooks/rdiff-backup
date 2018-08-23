@@ -6,11 +6,18 @@ describe 'rdiff-backup::default' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
-      before do
-        stub_data_bag_item('users', 'rdiff-backup-client')
+
+      %w(
+        yum
+        yum-epel
+      ).each do |r|
+        it do
+          expect(chef_run).to include_recipe(r)
+        end
       end
+
       it do
-        expect(chef_run).to include_recipe('rdiff-backup::client')
+        expect(chef_run).to install_package('rdiff-backup')
       end
     end
   end

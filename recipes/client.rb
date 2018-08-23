@@ -17,9 +17,7 @@
 # limitations under the License.
 #
 # Install rdiff-backup.
-include_recipe 'yum'
-include_recipe 'yum-epel'
-package 'rdiff-backup'
+include_recipe 'rdiff-backup'
 
 client_user = node['rdiff-backup']['client']['user']
 
@@ -27,7 +25,7 @@ client_user = node['rdiff-backup']['client']['user']
 user client_user do
   comment 'User for rdiff-backup client backups'
   shell '/bin/bash'
-  supports manage_home: true
+  manage_home true
   action :nothing
 end.run_action(:create)
 
