@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+3.0.0 (2018-08-23)
+------------------
+- Chef 13 compatibility fixes
+
 2.0.12 (2018-08-13)
 -------------------
 - Remove dep lock on nagios < 8.0.0 since we need to update it now
