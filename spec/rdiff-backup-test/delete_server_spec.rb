@@ -40,7 +40,9 @@ describe 'rdiff-backup-test::delete_server' do
       end
 
       it do
-        expect(chef_run).to delete_cron('delete_tatooine')
+        expect(chef_run).to delete_cron('delete_tatooine').with(
+          user: 'rdiff-backup-server'
+        )
       end
 
       %w(/home/rdiff-backup-server/exclude/192.168.60.25
