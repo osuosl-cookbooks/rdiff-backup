@@ -84,3 +84,9 @@ end
     it { should_not exist }
   end
 end
+
+describe cron do
+  it { should have_entry('0 0 * * * /usr/bin/flock /var/rdiff-backup/locks/test1 /home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan').with_user('rdiff-backup-server') }
+  it { should_not have_entry('0 0 * * * /usr/bin/flock /var/rdiff-backup/locks/test2 /home/rdiff-backup-server/scripts/192.168.60.12/_test2').with_user('rdiff-backup-server') }
+  it { should_not have_entry('0 0 * * * /usr/bin/flock /var/rdiff-backup/locks/delete_tatooine /home/rdiff-backup-server/scripts/192.168.60.25/_help_me_boba_fett').with_user('rdiff-backup-server') }
+end
