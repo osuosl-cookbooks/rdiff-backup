@@ -123,6 +123,7 @@ action :delete do
   end
 
   cron new_resource.name do
+    user node['rdiff-backup']['server']['user']
     action :delete
   end
 
