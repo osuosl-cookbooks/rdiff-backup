@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+3.0.1 (2018-08-29)
+------------------
+- Properly remove cron job in rdiff_backup delete action
+
 3.0.0 (2018-08-23)
 ------------------
 - Chef 13 compatibility fixes
