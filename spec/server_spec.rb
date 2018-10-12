@@ -33,6 +33,17 @@ describe 'rdiff-backup::server' do
       end
 
       it do
+        expect(chef_run).to create_sudo('check_rdiff').with(
+          user: %w(nrpe),
+          nopasswd: true,
+          commands: [
+            '/usr/lib64/nagios/plugins/check_rdiff',
+            '/usr/lib64/nagios/plugins/check_rdiff_log',
+          ]
+        )
+      end
+
+      it do
         expect(chef_run).to create_user('rdiff-backup-server')
       end
 
@@ -94,6 +105,9 @@ describe 'rdiff-backup::server' do
 
         it do
           expect(chef_run).to_not create_cookbook_file('/usr/lib64/nagios/plugins/chef_rdiff')
+        end
+        it do
+          expect(chef_run).to_not create_sudo('check_rdiff')
         end
       end
     end

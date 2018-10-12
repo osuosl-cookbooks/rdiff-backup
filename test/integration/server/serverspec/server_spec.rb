@@ -32,6 +32,12 @@ describe file('/etc/sudoers.d/rdiff-backup-server') do
   its(:content) { should match(/NOPASSWD/) }
 end
 
+describe file('/etc/sudoers.d/check_rdiff') do
+  it { should exist }
+  its(:content) { should match(%r{^nrpe ALL=\(ALL\) NOPASSWD:/usr/lib64/nagios/plugins/check_rdiff$}) }
+  its(:content) { should match(%r{^nrpe ALL=\(ALL\) NOPASSWD:/usr/lib64/nagios/plugins/check_rdiff_log$}) }
+end
+
 describe file('/var/rdiff-backup/locks') do
   it { should exist }
   it { should be_directory }
