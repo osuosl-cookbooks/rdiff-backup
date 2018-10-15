@@ -31,6 +31,15 @@ if node['rdiff-backup']['server']['nrpe'] # ~FC023
     group node['nrpe']['group']
     source 'nagios/plugins/check_rdiff'
   end
+
+  sudo 'check_rdiff' do
+    user node['nrpe']['user']
+    nopasswd true
+    commands [
+      '/usr/lib64/nagios/plugins/check_rdiff',
+      '/usr/lib64/nagios/plugins/check_rdiff_log',
+    ]
+  end
 end
 
 user node['rdiff-backup']['server']['user']
