@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+3.0.2 (2018-10-15)
+------------------
+- Allow sudo for nrpe with check_rdiff plugin
+
 3.0.1 (2018-08-29)
 ------------------
 - Properly remove cron job in rdiff_backup delete action
