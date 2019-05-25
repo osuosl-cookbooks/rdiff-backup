@@ -4,5 +4,5 @@ end
 
 describe user('rdiff-backup-client') do
   it { should exist }
-  it { should have_login_shell('/bin/bash') }
+  its('shell') { should eq '/bin/bash' }
 end
