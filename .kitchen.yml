@@ -1,4 +1,6 @@
 ---
+verifier:
+  name: inspec
 provisioner:
   name: chef_solo
   data_bags_path: test/integration/data_bags
