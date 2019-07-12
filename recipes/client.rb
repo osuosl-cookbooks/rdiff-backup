@@ -40,5 +40,15 @@ sudo client_user do
   commands ['/usr/bin/rdiff-backup --server --restrict-read-only /']
   nopasswd true
 end
-node.override['ssh_keys'][client_user] = ['rdiff-backup-client']
-include_recipe 'ssh-keys'
+
+directory "/home/#{client_user}/.ssh" do
+  mode '0700'
+  owner client_user
+  group client_user
+end
+
+template "/home/#{client_user}/.ssh/authorized_keys" do
+  mode '0600'
+  owner client_user
+  group client_user
+end

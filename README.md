@@ -6,13 +6,12 @@ Backs up hosts using rdiff-backup.
 Requirements
 ------------
 
-* `Chef >= 11.10`
+* `Chef >= 12.18`
 
 ## Required Cookbooks:
 
 * `yum` (for installing rdiff-backup)
 * `yum-epel` (for installing rdiff-backup)
-* `chef-user` (for setting up user accounts)
 
 ## Optional Cookbooks:
 
@@ -21,7 +20,7 @@ Requirements
 
 ## Optional External Cookbooks:
 
-* `nagios >= ???` (for nagios alerts regarding backup statuses)
+* `nagios` (for nagios alerts regarding backup statuses)
 
 Features
 --------
@@ -84,6 +83,7 @@ Attributes
 
 ## Client Attributes:
 
+* `node['rdiff-backup']['client']['ssh_keys']` - Array of public ssh keys. default ``[]``
 * `node['rdiff-backup']['client']['ssh-port']` - SSH port to connect to, default "22"
 * `node['rdiff-backup']['client']['user']` - User to run backups with on the client side, default "rdiff-backup-client"
 * `node['rdiff-backup']['client']['jobs']` - Map of jobs to run for a particular client, where each key is a source dir to back up (or 'default') and each value is a hash of attributes specific to that job, default empty
@@ -155,20 +155,20 @@ entirely through roles or entirely through databags.
 Usage
 -----
 
-To set up an rdiff-backup server, first generate an ssh keypair (such as with
-`ssh-keygen`) and create a myclientbackupusername.json in the "user" databag
-for the rdiff-backup client user containing the pubkey and its user id.
+To set up an rdiff-backup server, first generate an ssh keypair (such as with `ssh-keygen`) and add the public key to
+``node['rdiff-backup']['client']['ssh_keys']``
 
-Example `data_bags/users/rdiff-backup-client.json`:
+Example:
+``` ruby
+node.default['rdiff-backup']['client']['ssh_keys'] =
+  [
+    'no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"sudo rdiff-backup --server --restrict-read-only /\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client'
+  ]
+include_recipe 'rdiff-backup::client'
+```
 
-`{
-  "id"        : "rdiff-backup-client",
-  "ssh_keys"  : ["no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,command=\"sudo rdiff-backup --server --restrict-read-only /\" ssh-rsa aTjnzpFeQ1kE69Vi3krV58YM1ZcUg7JgbYR337eE== rdiff-backup client"]
-}`
-
-To allow two rdiff-backup servers to run independently of each other in
-different environments, each with their own keys and clients, you must use
-different usernames.  This is a limitation of the user cookbook.
+To allow two rdiff-backup servers to run independently of each other in different environments, each with their own
+keys and clients, you must use different usernames.
 
 ## Server:
 
@@ -200,31 +200,33 @@ attributes set in the host's node definition will be ignored entirely.
 
 Example `data_bags/rdiff-backup_hosts/myclient_mydomain_com.json`:
 
-`{
-    "id": "myclient_mydomain_com",
-    "chef_environment": "dev",
-    "rdiff-backup": {
-        "client": {
-            "ssh-port": 2222,
-            "user": "my-special-rdiff-backup-user",
-            "jobs": {
-                "default": {
-                    "retention-period": "3M",
-                    "exclude-dirs": [
-                        "/etc/keys",
-                        "/var/log/apache",
-                        "/var/log/nginx"
-                    ]
-                },
-                "/etc": {},
-                "/home": {},
-                "/var/log": {
-                    "retention-period": "2W"
-                }
-            }
+``` json
+{
+  "id": "myclient_mydomain_com",
+  "chef_environment": "dev",
+  "rdiff-backup": {
+    "client": {
+      "ssh-port": 2222,
+      "user": "my-special-rdiff-backup-user",
+      "jobs": {
+        "default": {
+          "retention-period": "3M",
+          "exclude-dirs": [
+            "/etc/keys",
+            "/var/log/apache",
+            "/var/log/nginx"
+          ]
+        },
+        "/etc": {},
+        "/home": {},
+        "/var/log": {
+          "retention-period": "2W"
         }
+      }
     }
-}`
+  }
+}
+```
 
 Additionally, a databag for the rdiff-backup server may contain both server
 attributes (to be used as defaults for all jobs) and client attributes (for
