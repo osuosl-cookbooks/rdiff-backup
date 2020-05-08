@@ -27,3 +27,7 @@ cookbooks/*
 nodes/*
 vms/*
 .kitchen.list.yml
+
+# kitchen-terraform
+.terraform/
+terraform.*

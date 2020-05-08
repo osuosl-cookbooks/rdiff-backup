@@ -19,3 +19,29 @@ suites:
     run_list:
       - recipe[rdiff-backup-test::create_server]
       - recipe[rdiff-backup-test::delete_server]
+  - name: multi-node
+    driver:
+      name: terraform
+      command_timeout: 1800
+    provisioner: terraform
+    verifier:
+      name: terraform
+      systems:
+        - name: client
+          backend: ssh
+          hosts_output: client
+          sudo: true
+          user: centos
+          controls:
+            - all
+            - client
+          hostnames: client
+        - name: server
+          backend: ssh
+          hosts_output: server
+          sudo: true
+          user: centos
+          controls:
+            - all
+            - server
+          hostnames: server
