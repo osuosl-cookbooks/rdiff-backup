@@ -45,3 +45,5 @@ suites:
             - all
             - server
           hostnames: server
+    excludes:
+      - centos-6
