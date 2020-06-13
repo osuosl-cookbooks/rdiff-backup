@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+3.2.0 (2020-06-13)
+------------------
+- Remove nagios cookbook dependency
+
 3.1.0 (2019-07-15)
 ------------------
 - Manage client ssh keys directly instead of using ssh-keys cookbook
