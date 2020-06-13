@@ -9,7 +9,6 @@ version          '3.1.0'
 issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
 source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
-depends 'nagios'
 depends 'nrpe'
 depends 'sudo'
 depends 'yum'
