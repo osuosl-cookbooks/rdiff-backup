@@ -14,14 +14,14 @@ describe 'rdiff-backup-test::client' do
       end
       it do
         expect(chef_run).to create_directory('/help/me/obiwan').with(
-          mode: 0755,
+          mode: '0755',
           recursive: true
         )
       end
       it do
         expect(chef_run).to create_file('/help/me/obiwan/r2d2').with(
           content: 'test',
-          mode: 0644
+          mode: '0644'
         )
       end
     end

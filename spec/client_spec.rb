@@ -15,12 +15,11 @@ describe 'rdiff-backup::client' do
         expect(chef_run).to create_user('rdiff-backup-client').with(
           comment: 'User for rdiff-backup client backups',
           shell: '/bin/bash',
-          manage_home: true,
-          action: [:nothing]
+          manage_home: true
         )
       end
       it do
-        expect(chef_run).to reload_ohai('reload_passwd').with(
+        expect(chef_run).to nothing_ohai('reload_passwd').with(
           plugin: 'etc',
           action: [:nothing]
         )

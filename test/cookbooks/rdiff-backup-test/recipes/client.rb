@@ -3,11 +3,11 @@ node.override['rdiff-backup']['client']['ssh_keys'] = ['ssh-rsa AAAAB3NzaC1yc2EA
 include_recipe 'rdiff-backup::client'
 
 directory '/help/me/obiwan' do
-  mode 0755
+  mode '0755'
   recursive true
 end
 
 file '/help/me/obiwan/r2d2' do
   content 'test'
-  mode 0644
+  mode '0644'
 end

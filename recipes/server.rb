@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: rdiff-backup
+# Cookbook:: rdiff-backup
 # Recipe:: server
 #
-# Copyright 2013, Oregon State University
+# Copyright:: 2013-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ include_recipe 'rdiff-backup'
 
 package 'cronolog'
 
-if node['rdiff-backup']['server']['nrpe'] # ~FC023
+if node['rdiff-backup']['server']['nrpe']
   include_recipe 'nrpe'
 
   cookbook_file ::File.join(node['nrpe']['plugin_dir'], 'check_rdiff') do
-    mode 0755
+    mode '0755'
     cookbook 'rdiff-backup'
     owner node['nrpe']['user']
     group node['nrpe']['group']
@@ -56,7 +56,7 @@ end
 directory node['rdiff-backup']['server']['lock_dir'] do
   owner node['rdiff-backup']['server']['user']
   group node['rdiff-backup']['server']['group']
-  mode 0755
+  mode '0755'
   recursive true
 end
 
@@ -66,7 +66,7 @@ ssh_dir = is_root ? '/root/.ssh' : "/home/#{node['rdiff-backup']['server']['user
 directory ssh_dir do
   owner node['rdiff-backup']['server']['user']
   group node['rdiff-backup']['server']['group']
-  mode 0700
+  mode '0700'
   recursive true
 end
 
@@ -74,13 +74,13 @@ secrets = data_bag_item('rdiff-backup-secrets', 'secrets')
 
 file "#{ssh_dir}/id_rsa" do
   content secrets['ssh-key']
-  mode 0600
+  mode '0600'
   owner node['rdiff-backup']['server']['user']
 end
 
 directory '/var/log/rdiff-backup' do
   owner node['rdiff-backup']['server']['user']
   group node['rdiff-backup']['server']['group']
-  mode 0755
+  mode '0755'
   recursive true
 end
