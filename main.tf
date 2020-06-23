@@ -55,6 +55,7 @@ resource "openstack_compute_instance_v2" "client" {
     provisioner "chef" {
         run_list        = ["recipe[rdiff-backup-test::network]", "recipe[rdiff-backup-test::client]"]
         node_name       = "client"
+        client_options  = ["chef_license 'accept'"]
         secret_key      = "${file("test/integration/encrypted_data_bag_secret")}"
         server_url      = "http://${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}:8889"
         recreate_client = true
@@ -88,6 +89,7 @@ resource "openstack_compute_instance_v2" "server" {
         server_url      = "http://${openstack_compute_instance_v2.chef_zero.network.0.fixed_ip_v4}:8889"
         recreate_client = true
         user_name       = "fakeclient"
+        client_options  = ["chef_license 'accept'"]
         user_key        = "${file("test/chef-config/fakeclient.pem")}"
         version         = "${var.chef_version}"
     }
