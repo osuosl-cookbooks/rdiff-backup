@@ -8,7 +8,7 @@ variable "centos_image" {
     default = "CentOS 7.7"
 }
 variable "ssh_key_name" {
-    default = "key_name"
+    default = "bootstrap"
 }
 variable "ssh_user_name" {
     default = "centos"

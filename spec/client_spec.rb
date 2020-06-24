@@ -17,6 +17,7 @@ describe 'rdiff-backup::client' do
           shell: '/bin/bash',
           manage_home: true
         )
+        expect(chef_run.user('rdiff-backup-client')).to notify('ohai[reload_passwd]').to(:reload).immediately
       end
       it do
         expect(chef_run).to nothing_ohai('reload_passwd').with(
