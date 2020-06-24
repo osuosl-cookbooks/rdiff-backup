@@ -31,8 +31,8 @@ describe 'rdiff-backup-test::delete_server' do
       %w(
         /home/rdiff-backup-server/exclude/192.168.60.25/_help_me_boba_fett
         /home/rdiff-backup-server/scripts/192.168.60.25/_help_me_boba_fett
-        /home/rdiff-backup-server/exclude/192.168.60.12/_test2
-        /home/rdiff-backup-server/scripts/192.168.60.12/_test2
+        /home/rdiff-backup-server/exclude/192.168.60.13/_test3
+        /home/rdiff-backup-server/scripts/192.168.60.13/_test3
       ).each do |f|
         it do
           expect(chef_run).to delete_file(f)
