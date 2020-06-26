@@ -58,7 +58,7 @@ action :create do
                    new_resource.source.tr('/', '_')) do
     owner node['rdiff-backup']['server']['user']
     group node['rdiff-backup']['server']['group'] || node['rdiff-backup']['server']['user']
-    mode 0644
+    mode '0644'
     content new_resource.exclude.join("\n")
   end
 
@@ -70,7 +70,7 @@ action :create do
 
   template filename do
     source 'job.sh.erb'
-    mode 0775
+    mode '0775'
     owner node['rdiff-backup']['server']['user']
     group node['rdiff-backup']['server']['group']
     cookbook new_resource.cookbook
@@ -100,7 +100,7 @@ action :create do
 end
 
 action :delete do
-  if node['rdiff-backup']['server']['nrpe'] # ~FC023
+  if node['rdiff-backup']['server']['nrpe']
     nrpe_check "check_rdiff_job_#{new_resource.name}" do
       action :remove
     end

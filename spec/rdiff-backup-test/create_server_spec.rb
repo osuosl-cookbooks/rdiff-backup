@@ -91,7 +91,7 @@ describe 'rdiff-backup-test::create_server' do
         ).with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server' || 'rdiff-backup-server',
-          mode: 0644,
+          mode: '0644',
           content: [
             '**/darth-vader', '/help/me/obiwan/emperor-palpatine'
           ].join("\n")
@@ -104,7 +104,7 @@ describe 'rdiff-backup-test::create_server' do
         ).with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
-          mode: 0644,
+          mode: '0644',
           content: [
             '**/foo', '/bar/foo'
           ].join("\n")
@@ -116,7 +116,7 @@ describe 'rdiff-backup-test::create_server' do
           '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
         ).with(
           source: 'job.sh.erb',
-          mode: 0775,
+          mode: '0775',
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
           cookbook: 'rdiff-backup',
@@ -138,7 +138,7 @@ describe 'rdiff-backup-test::create_server' do
           '/home/rdiff-backup-server/scripts/192.168.60.12/_test2'
         ).with(
           source: 'job.sh.erb',
-          mode: 0775,
+          mode: '0775',
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
           cookbook: 'rdiff-backup',

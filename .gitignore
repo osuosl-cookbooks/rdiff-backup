@@ -31,3 +31,4 @@ vms/*
 # kitchen-terraform
 .terraform/
 terraform.*
+output.log

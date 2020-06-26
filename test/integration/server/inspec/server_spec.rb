@@ -77,10 +77,10 @@ describe file('/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan')
 end
 
 %w(
-  /home/rdiff-backup-server/exclude/192.168.60.12
-  /home/rdiff-backup-server/exclude/192.168.60.12/_test2
-  /home/rdiff-backup-server/scripts/192.168.60.12
-  /home/rdiff-backup-server/scripts/192.168.60.12/_test2
+  /home/rdiff-backup-server/exclude/192.168.60.13
+  /home/rdiff-backup-server/exclude/192.168.60.13/_test3
+  /home/rdiff-backup-server/scripts/192.168.60.13
+  /home/rdiff-backup-server/scripts/192.168.60.13/_test3
 ).each do |f|
   describe file(f) do
     it { should_not exist }
@@ -96,6 +96,6 @@ describe crontab('rdiff-backup-server').commands('/usr/bin/flock /var/rdiff-back
 end
 
 describe crontab('rdiff-backup-server') do
-  its('commands') { should_not include '/usr/bin/flock /var/rdiff-backup/locks/test2 /home/rdiff-backup-server/scripts/192.168.60.12/_test2' }
+  its('commands') { should_not include '/usr/bin/flock /var/rdiff-backup/locks/test3 /home/rdiff-backup-server/scripts/192.168.60.13/_test3' }
   its('commands') { should_not include '/usr/bin/flock /var/rdiff-backup/locks/delete_tatooine /home/rdiff-backup-server/scripts/192.168.60.25/_help_me_boba_fett' }
 end

@@ -1,8 +1,8 @@
 #
-# Cookbook Name:: rdiff-backup
+# Cookbook:: rdiff-backup
 # Recipe:: client
 #
-# Copyright 2013, Oregon State University
+# Copyright:: 2013-2020, Oregon State University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@ user client_user do
   comment 'User for rdiff-backup client backups'
   shell '/bin/bash'
   manage_home true
-  action :nothing
-end.run_action(:create)
+  notifies :reload, 'ohai[reload_passwd]', :immediately
+end
 
 ohai 'reload_passwd' do
   action :nothing
   plugin 'etc'
-end.run_action(:reload)
+end
 
 sudo client_user do
   user client_user

@@ -24,7 +24,7 @@ describe 'rdiff-backup::server' do
 
       it do
         expect(chef_run).to create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff').with(
-          mode: 0755,
+          mode: '0755',
           cookbook: 'rdiff-backup',
           owner: 'nrpe',
           group: 'nrpe',
@@ -65,7 +65,7 @@ describe 'rdiff-backup::server' do
         expect(chef_run).to create_directory('/var/rdiff-backup/locks').with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
-          mode: 0755,
+          mode: '0755',
           recursive: true
         )
       end
@@ -74,7 +74,7 @@ describe 'rdiff-backup::server' do
         expect(chef_run).to create_directory('/home/rdiff-backup-server/.ssh').with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
-          mode: 0700,
+          mode: '0700',
           recursive: true
         )
       end
@@ -82,7 +82,7 @@ describe 'rdiff-backup::server' do
       it do
         expect(chef_run).to create_file('/home/rdiff-backup-server/.ssh/id_rsa').with(
           content: 'secret-key',
-          mode: 0600,
+          mode: '0600',
           owner: 'rdiff-backup-server'
         )
       end
@@ -91,7 +91,7 @@ describe 'rdiff-backup::server' do
         expect(chef_run).to create_directory('/var/log/rdiff-backup').with(
           owner: 'rdiff-backup-server',
           group: 'rdiff-backup-server',
-          mode: 0755,
+          mode: '0755',
           recursive: true
         )
       end
