@@ -2,6 +2,11 @@ require 'chefspec'
 require 'chefspec/berkshelf'
 require_relative 'support/matchers'
 
+CENTOS_8_OPTS = {
+  platform: 'centos',
+  version: '8',
+}.freeze
+
 CENTOS_7_OPTS = {
   platform: 'centos',
   version: '7',
