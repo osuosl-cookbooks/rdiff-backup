@@ -3,7 +3,8 @@
 # rdiff-backup job script for $JOB managed by Chef. Changes will be overwritten.
 
 # This script is normally run by cron, but can be run manually to start the job if it is not already running.
-
+YEAR_MONTH="$(date +'%Y-%m')"
+DAY="$(date +'%Y-%m-%d')"
 FILE=`basename $0`
 DIR=`dirname $0`
 JOB="${FILE%.sh}"
@@ -11,12 +12,13 @@ LOGPATH='/var/log/rdiff-backup'
 
 # Prepends date to every line of stdin, then writes to both stdout and the log file.
 function log() {
-  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log")
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee -a "${LOGPATH}/${JOB}/${YEAR_MONTH}.log"
 }
 
 # Prepends date to every line of stdin, then writes to stdout and both the individual and general log files.
 function logboth() {
-  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee >(/usr/sbin/cronolog "${LOGPATH}/${JOB}/%Y-%m.log") >(/usr/sbin/cronolog "${LOGPATH}/general/%Y-%m-%d.log" -S "${LOGPATH}/current.log")
+  sed "s/^/[`date +'%Y-%m-%d %H:%M:%S'`] /" | tee -a "${LOGPATH}/${JOB}/${YEAR_MONTH}.log" "${LOGPATH}/general/${DAY}.log"
+  ln -sf "${LOGPATH}/general/${DAY}.log" "${LOGPATH}/current.log" 
 }
 
 # If we're root instead of the rdiff-backup server user, rerun the script as it.

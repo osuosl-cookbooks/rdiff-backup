@@ -1,5 +1,4 @@
 %w(
-  cronolog
   rdiff-backup
 ).each do |p|
   describe package p do

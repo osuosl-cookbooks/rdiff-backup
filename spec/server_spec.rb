@@ -19,10 +19,6 @@ describe 'rdiff-backup::server' do
       end
 
       it do
-        expect(chef_run).to install_package('cronolog')
-      end
-
-      it do
         expect(chef_run).to create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff').with(
           mode: '0755',
           cookbook: 'rdiff-backup',

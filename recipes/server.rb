@@ -19,8 +19,6 @@
 
 include_recipe 'rdiff-backup'
 
-package 'cronolog'
-
 if node['rdiff-backup']['server']['nrpe']
   include_recipe 'nrpe'
 

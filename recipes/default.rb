@@ -1,4 +1,3 @@
-#
 # Cookbook:: rdiff-backup
 # Recipe:: default
 #
