@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+4.1.0 (2020-08-05)
+------------------
+- Upgrade to centos 8
+
 4.0.0 (2020-06-26)
 ------------------
 - Chef 15 fixes
