@@ -1,7 +1,7 @@
 require_relative '../spec_helper'
 
 describe 'rdiff-backup-test::nrpe_false_create_server' do
-  [CENTOS_6_OPTS, CENTOS_7_OPTS].each do |pltfrm|
+  ALL_PLATFORMS.each do |pltfrm|
     context "on #{pltfrm[:platform]} #{pltfrm[:version]}" do
       let(:runner) do
         ChefSpec::SoloRunner.new(

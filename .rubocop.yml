@@ -2,7 +2,7 @@ AllCops:
   Exclude:
     - 'cookbooks/**/*'
     - '**/metadata.rb'
-  TargetChefVersion: 15.latest
+  TargetChefVersion: 16.latest
 ChefModernize/FoodcriticComments:
   Enabled: true
 ChefStyle/CopyrightCommentFormat:
