@@ -93,9 +93,11 @@ action :create do
     weekday new_resource.cron_weekday
     month new_resource.cron_month
     user node['rdiff-backup']['server']['user']
-    command ['/usr/bin/flock',
-             node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
-             filename].join(' ')
+    command [
+      '/usr/bin/flock',
+      node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
+      filename,
+    ].join(' ')
   end
 end
 
@@ -127,7 +129,7 @@ action :delete do
     command [
         '/usr/bin/flock',
         node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
-        filename
+        filename,
     ].join(' ')
     action :delete
   end
