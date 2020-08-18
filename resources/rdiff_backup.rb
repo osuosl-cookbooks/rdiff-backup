@@ -124,9 +124,11 @@ action :delete do
 
   cron new_resource.name do
     user node['rdiff-backup']['server']['user']
-    command ['/usr/bin/flock',
-             node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
-             filename].join(' ')
+    command [
+        '/usr/bin/flock',
+        node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
+        filename
+    ].join(' ')
     action :delete
   end
 
