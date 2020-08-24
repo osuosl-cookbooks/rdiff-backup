@@ -4,7 +4,7 @@ maintainer_email 'chef@osuosl.org'
 license          'Apache-2.0'
 chef_version     '>= 14'
 description      'Installs/Configures rdiff-backup'
-version          '4.1.0'
+version          '4.2.0'
 issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
 source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
