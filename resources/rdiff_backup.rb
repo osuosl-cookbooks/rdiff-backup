@@ -1,4 +1,4 @@
-resource_name :rdiff_backup
+provides :rdiff_backup
 
 default_action :create
 
@@ -16,8 +16,8 @@ property :nrpe_critical, String, default: '18'
 property :nrpe_period, String, default: '24'
 property :nrpe_transferred, String, default: '800000000'
 property :exclude, Array, default: []
-property :cron_minute, [String, Integer], default: 0
-property :cron_hour, [String, Integer], default: 0
+property :cron_minute, [String, Integer], default: '0'
+property :cron_hour, [String, Integer], default: '0'
 property :cron_day, [String, Integer], default: '*'
 property :cron_weekday, [String, Integer], default: '*'
 property :cron_month, [String, Integer], default: '*'
@@ -93,9 +93,11 @@ action :create do
     weekday new_resource.cron_weekday
     month new_resource.cron_month
     user node['rdiff-backup']['server']['user']
-    command ['/usr/bin/flock',
-             node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
-             filename].join(' ')
+    command [
+      '/usr/bin/flock',
+      node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
+      filename,
+    ].join(' ')
   end
 end
 
@@ -124,6 +126,11 @@ action :delete do
 
   cron new_resource.name do
     user node['rdiff-backup']['server']['user']
+    command [
+        '/usr/bin/flock',
+        node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
+        filename,
+    ].join(' ')
     action :delete
   end
 

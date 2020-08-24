@@ -2,20 +2,26 @@ require 'chefspec'
 require 'chefspec/berkshelf'
 require_relative 'support/matchers'
 
-CENTOS_8_OPTS = {
+CENTOS_8 = {
   platform: 'centos',
   version: '8',
 }.freeze
 
-CENTOS_7_OPTS = {
+CENTOS_7 = {
   platform: 'centos',
   version: '7',
 }.freeze
 
-CENTOS_6_OPTS = {
+CENTOS_6 = {
   platform: 'centos',
   version: '6',
 }.freeze
+
+ALL_PLATFORMS = [
+  CENTOS_6,
+  CENTOS_7,
+  CENTOS_8,
+].freeze
 
 RSpec.configure do |config|
   config.log_level = :warn
