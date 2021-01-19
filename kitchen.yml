@@ -2,7 +2,7 @@
 verifier:
   name: inspec
 provisioner:
-  name: chef_solo
+  name: chef_zero
   enforce_idempotency: true
   multiple_converge: 2
   deprecations_as_errors: true
