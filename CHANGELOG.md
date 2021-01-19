@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+4.2.1 (2021-01-19)
+------------------
+- Cookstyle fixes
+
 4.2.0 (2020-08-24)
 ------------------
 - Migrate to chef 16
