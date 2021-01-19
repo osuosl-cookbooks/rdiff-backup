@@ -49,7 +49,7 @@ describe 'rdiff-backup-test::nrpe_false_create_server' do
         it do
           expect(chef_run).to create_directory(d).with(
             owner: 'rdiff-backup-server',
-            group: 'rdiff-backup-server' || 'rdiff-backup-server',
+            group: 'rdiff-backup-server',
             recursive: true
           )
         end
@@ -60,7 +60,7 @@ describe 'rdiff-backup-test::nrpe_false_create_server' do
           '/home/rdiff-backup-server/exclude/192.168.60.11/_help_me_obiwan'
         ).with(
           owner: 'rdiff-backup-server',
-          group: 'rdiff-backup-server' || 'rdiff-backup-server',
+          group: 'rdiff-backup-server',
           mode: '0644',
           content: [
             '**/darth-vader', '/help/me/obiwan/emperor-palpatine'
