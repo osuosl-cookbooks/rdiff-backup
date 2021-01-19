@@ -58,7 +58,7 @@ suites:
     driver:
       name: terraform
       variables:
-        centos_image: "CentOS 8.1"
+        centos_image: "CentOS 8.3"
       command_timeout: 1800
     excludes:
       - centos-6
