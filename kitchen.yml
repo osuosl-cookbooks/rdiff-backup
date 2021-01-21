@@ -30,7 +30,6 @@ suites:
       name: terraform
       command_timeout: 1800
     excludes:
-      - centos-6
       - centos-8
     provisioner: terraform
     verifier:
@@ -61,7 +60,6 @@ suites:
         centos_image: "CentOS 8.3"
       command_timeout: 1800
     excludes:
-      - centos-6
       - centos-7
     provisioner: terraform
     verifier:

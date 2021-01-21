@@ -13,6 +13,5 @@ depends 'sudo'
 depends 'yum'
 depends 'yum-epel'
 
-supports 'centos', '~> 6.0'
 supports 'centos', '~> 7.0'
 supports 'centos', '~> 8.0'
