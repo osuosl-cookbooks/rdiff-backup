@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+4.3.0 (2021-01-21)
+------------------
+- Remove centos 6 support
+
 4.2.1 (2021-01-19)
 ------------------
 - Cookstyle fixes
