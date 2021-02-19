@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+4.3.1 (2021-02-19)
+------------------
+- Don't include the yum recipe anymore
+
 4.3.0 (2021-01-21)
 ------------------
 - Remove centos 6 support
