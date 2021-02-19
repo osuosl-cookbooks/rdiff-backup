@@ -7,13 +7,8 @@ describe 'rdiff-backup::default' do
         ChefSpec::SoloRunner.new(pltfrm).converge(described_recipe)
       end
 
-      %w(
-        yum
-        yum-epel
-      ).each do |r|
-        it do
-          expect(chef_run).to include_recipe(r)
-        end
+      it do
+        expect(chef_run).to include_recipe('yum-epel')
       end
 
       it do
