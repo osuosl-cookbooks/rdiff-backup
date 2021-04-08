@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.0.0 (2021-04-08)
+------------------
+- Update Chef dependency to >= 16
+
 4.3.1 (2021-02-19)
 ------------------
 - Don't include the yum recipe anymore
