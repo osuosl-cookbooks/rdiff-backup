@@ -1,4 +1,5 @@
 provides :rdiff_backup
+unified_mode true
 
 default_action :create
 
