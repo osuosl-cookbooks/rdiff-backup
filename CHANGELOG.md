@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.1.1 (2021-12-02)
+------------------
+- Ensure log directories exist
+
 5.1.0 (2021-06-15)
 ------------------
 - Set unified_mode for custom resources
