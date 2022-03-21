@@ -30,7 +30,7 @@ suites:
 #      name: terraform
 #      command_timeout: 1800
 #    excludes:
-#      - centos-8
+#      - centos_stream-8
 #    provisioner: terraform
 #    verifier:
 #      name: terraform
@@ -57,7 +57,7 @@ suites:
 #    driver:
 #      name: terraform
 #      variables:
-#        centos_image: "CentOS 8.3"
+#        centos_image: "CentOS Stream 8.3"
 #      command_timeout: 1800
 #    excludes:
 #      - centos-7
