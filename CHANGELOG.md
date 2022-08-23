@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.2.0 (2022-08-23)
+------------------
+- Replace base with osl-resources
+
 5.1.1 (2021-12-02)
 ------------------
 - Ensure log directories exist
