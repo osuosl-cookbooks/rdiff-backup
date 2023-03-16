@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.2.1 (2023-03-16)
+------------------
+- Add support for AlmaLinux 8
+
 5.2.0 (2022-08-23)
 ------------------
 - Replace base with osl-resources
