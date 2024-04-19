@@ -1,3 +1,7 @@
+AllCops:
+  Exclude:
+    - 'cookbooks/**/*'
+    - '**/metadata.rb'
 Chef/Modernize/FoodcriticComments:
   Enabled: true
 Chef/Style/CopyrightCommentFormat:

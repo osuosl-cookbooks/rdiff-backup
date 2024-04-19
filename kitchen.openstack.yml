@@ -13,6 +13,7 @@ driver:
   availability_zone: <%= ENV['OS_AVAILABILITY_ZONE'] || 'nova' %>
   private_key_path: <%= ENV['OS_PRIVATE_SSH_KEY'] %>
   key_name: <%= ENV['OS_SSH_KEYPAIR'] %>
+  user_data: userdata.txt
 
 transport:
   name: rsync
