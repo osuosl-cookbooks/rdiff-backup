@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.2.2 (2024-04-19)
+------------------
+- Test Kitchen Config Refactor
+
 5.2.1 (2023-03-16)
 ------------------
 - Add support for AlmaLinux 8
