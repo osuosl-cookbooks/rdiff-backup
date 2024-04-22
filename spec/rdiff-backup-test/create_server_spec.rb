@@ -127,6 +127,7 @@ describe 'rdiff-backup-test::create_server' do
             period: '1W',
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
+            restrict_path: '/',
             port: 22,
             args: '',
           }
@@ -149,6 +150,7 @@ describe 'rdiff-backup-test::create_server' do
             period: '1W',
             server_user: 'rdiff-backup-server',
             client_user: 'rdiff-backup-client',
+            restrict_path: '/',
             port: 22,
             args: '',
           }

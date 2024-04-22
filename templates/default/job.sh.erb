@@ -34,9 +34,9 @@ else
     --exclude-globbing-filelist "${DIR}/../../exclude/<%= @fqdn %>/<%= @src.gsub('/', '_') %>" \
     --remote-schema \
     <% if node['fqdn'] == @fqdn %>
-    'sudo -u <%= @client_user %> %s' 'sudo rdiff-backup --server --restrict-read-only /::<%= @src %>' \
+    'sudo -u <%= @client_user %> %s' 'sudo rdiff-backup --server --restrict-read-only <%= @restrict_path %>::<%= @src %>' \
     <% else %>
-    'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only /' '<%= @client_user %>@<%= @fqdn %>::<%= @src %>' \
+    'ssh -tCp <%= @port %> -o StrictHostKeyChecking=no %s sudo rdiff-backup --server --restrict-read-only <%= @restrict_path %>' '<%= @client_user %>@<%= @fqdn %>::<%= @src %>' \
     <% end %>
     '<%= @dest %>' 2>&1 | log
   if [ ${PIPESTATUS[0]} -eq 0 ]; then

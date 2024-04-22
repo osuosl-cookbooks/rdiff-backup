@@ -22,6 +22,7 @@ property :cron_hour, [String, Integer], default: '0'
 property :cron_day, [String, Integer], default: '*'
 property :cron_weekday, [String, Integer], default: '*'
 property :cron_month, [String, Integer], default: '*'
+property :restrict_path, String, default: '/'
 
 action :create do
   include_recipe 'rdiff-backup::server'
@@ -82,6 +83,7 @@ action :create do
       period: new_resource.retention_period,
       server_user: node['rdiff-backup']['server']['user'],
       client_user: new_resource.remote_user,
+      restrict_path: new_resource.restrict_path,
       port: new_resource.ssh_port,
       args: new_resource.args
     )
