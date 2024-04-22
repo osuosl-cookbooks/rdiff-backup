@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.3.0 (2024-04-22)
+------------------
+- Add restrict_path property to resource
+
 5.2.2 (2024-04-19)
 ------------------
 - Test Kitchen Config Refactor
