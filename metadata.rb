@@ -13,4 +13,3 @@ depends          'sudo'
 depends          'yum-epel'
 
 supports         'almalinux', '~> 8.0'
-supports         'centos', '~> 7.0'
