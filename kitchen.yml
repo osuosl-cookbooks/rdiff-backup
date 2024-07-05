@@ -20,7 +20,6 @@ provisioner:
 
 platforms:
   - name: almalinux-8
-  - name: centos-7
 
 suites:
   - name: client
@@ -35,42 +34,12 @@ suites:
     run_list:
       - recipe[rdiff-backup-test::create_server]
       - recipe[rdiff-backup-test::delete_server]
-#  - name: multi-node-7
-#    driver:
-#      name: terraform
-#      command_timeout: 1800
-#    excludes:
-#      - centos_stream-8
-#    provisioner: terraform
-#    verifier:
-#      name: terraform
-#      systems:
-#        - name: client
-#          backend: ssh
-#          hosts_output: client
-#          sudo: true
-#          user: centos
-#          controls:
-#            - all
-#            - client
-#          hostnames: client
-#        - name: server
-#          backend: ssh
-#          hosts_output: server
-#          sudo: true
-#          user: centos
-#          controls:
-#            - all
-#            - server
-#          hostnames: server
 #  - name: multi-node-8
 #    driver:
 #      name: terraform
 #      variables:
 #        centos_image: "CentOS Stream 8.3"
 #      command_timeout: 1800
-#    excludes:
-#      - centos-7
 #    provisioner: terraform
 #    verifier:
 #      name: terraform

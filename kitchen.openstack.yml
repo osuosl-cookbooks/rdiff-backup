@@ -26,10 +26,3 @@ platforms:
       image_ref: "AlmaLinux 8"
     transport:
       username: almalinux
-  - name: centos-7
-    driver_plugin: openstack
-    driver_config:
-      image_ref: "CentOS 7.9"
-    transport:
-      username: centos
-
