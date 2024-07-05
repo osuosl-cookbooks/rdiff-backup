@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.4.0 (2024-07-05)
+------------------
+- Remove support for CentOS 7
+
 5.3.0 (2024-04-22)
 ------------------
 - Add restrict_path property to resource
