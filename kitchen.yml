@@ -20,6 +20,7 @@ provisioner:
 
 platforms:
   - name: almalinux-8
+  - name: almalinux-9
 
 suites:
   - name: client
