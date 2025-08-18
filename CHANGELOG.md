@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.4.2 (2025-08-18)
+------------------
+- Almalinux10 Support
+
 5.4.1 (2024-09-18)
 ------------------
 - Add support for Almalinux 9
