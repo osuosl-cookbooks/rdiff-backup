@@ -9,8 +9,7 @@ transport:
   name: rsync
 
 provisioner:
-  name: chef_infra
-  product_name: cinc
+  name: cinc_infra
   product_version: '17'
   enforce_idempotency: true
   multiple_converge: 2

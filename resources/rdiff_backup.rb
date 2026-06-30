@@ -33,10 +33,10 @@ action :create do
     nrpe_check "check_rdiff_job_#{new_resource.name}" do
       command '/usr/bin/sudo ' + ::File.join(
         node['nrpe']['plugin_dir'], 'check_rdiff '
-      ) + "-w #{new_resource.nrpe_warning} "\
-          "-c #{new_resource.nrpe_critical} "\
-          "-r #{new_resource.destination} "\
-          "-p #{new_resource.nrpe_period} "\
+      ) + "-w #{new_resource.nrpe_warning} " \
+          "-c #{new_resource.nrpe_critical} " \
+          "-r #{new_resource.destination} " \
+          "-p #{new_resource.nrpe_period} " \
           "-l #{new_resource.nrpe_transferred}"
     end
   end
@@ -130,9 +130,9 @@ action :delete do
   cron new_resource.name do
     user node['rdiff-backup']['server']['user']
     command [
-        '/usr/bin/flock',
-        node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
-        filename,
+      '/usr/bin/flock',
+      node['rdiff-backup']['server']['lock_dir'] + '/' + new_resource.name,
+      filename,
     ].join(' ')
     action :delete
   end
