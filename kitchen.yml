@@ -10,7 +10,7 @@ transport:
 
 provisioner:
   name: cinc_infra
-  product_version: '17'
+  product_version: '18'
   enforce_idempotency: true
   multiple_converge: 2
   deprecations_as_errors: true
