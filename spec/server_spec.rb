@@ -52,7 +52,7 @@ describe 'rdiff-backup::server' do
           user: %w(rdiff-backup-server),
           group: %w(%rdiff-backup-server),
           nopasswd: true,
-          commands: ['/usr/bin/sudo rdiff-backup '\
+          commands: ['/usr/bin/sudo rdiff-backup ' \
                      '--server --restrict-read-only /']
         )
       end

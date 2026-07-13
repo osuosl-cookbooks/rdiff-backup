@@ -8,7 +8,7 @@ version          '5.4.2'
 issues_url       'https://github.com/osuosl-cookbooks/rdiff-backup/issues'
 source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
-depends          'nrpe'
+depends          'nrpe', '< 5.0'
 depends          'sudo'
 depends          'yum-epel'
 

@@ -51,10 +51,10 @@ describe 'rdiff-backup-test::create_server' do
       it do
         expect(chef_run).to add_nrpe_check('check_rdiff_job_test1').with(
           command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
-            ' -w 16 '\
-            '-c 18 '\
-            '-r /you/are/my/only/hope '\
-            '-p 24 '\
+            ' -w 16 ' \
+            '-c 18 ' \
+            '-r /you/are/my/only/hope ' \
+            '-p 24 ' \
             '-l 800000000'
         )
       end
@@ -62,10 +62,10 @@ describe 'rdiff-backup-test::create_server' do
       it do
         expect(chef_run).to add_nrpe_check('check_rdiff_job_test2').with(
           command: '/usr/bin/sudo /usr/lib64/nagios/plugins/check_rdiff' \
-            ' -w 16 '\
-            '-c 18 '\
-            '-r /backups/test2 '\
-            '-p 24 '\
+            ' -w 16 ' \
+            '-c 18 ' \
+            '-r /backups/test2 ' \
+            '-p 24 ' \
             '-l 800000000'
         )
       end
@@ -165,7 +165,7 @@ describe 'rdiff-backup-test::create_server' do
           weekday: '*',
           month: '*',
           user: 'rdiff-backup-server',
-          command: '/usr/bin/flock /var/rdiff-backup/locks/test1 '\
+          command: '/usr/bin/flock /var/rdiff-backup/locks/test1 ' \
           '/home/rdiff-backup-server/scripts/192.168.60.11/_help_me_obiwan'
         )
       end
@@ -178,7 +178,7 @@ describe 'rdiff-backup-test::create_server' do
           weekday: '*',
           month: '*',
           user: 'rdiff-backup-server',
-          command: '/usr/bin/flock /var/rdiff-backup/locks/test2 '\
+          command: '/usr/bin/flock /var/rdiff-backup/locks/test2 ' \
           '/home/rdiff-backup-server/scripts/192.168.60.12/_test2'
         )
       end
