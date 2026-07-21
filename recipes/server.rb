@@ -22,16 +22,16 @@ include_recipe 'rdiff-backup'
 if node['rdiff-backup']['server']['nrpe']
   nrpe 'server'
 
-  cookbook_file ::File.join(node['nrpe']['plugin_dir'], 'check_rdiff') do
+  cookbook_file ::File.join(default_plugin_dir, 'check_rdiff') do
     mode '0755'
     cookbook 'rdiff-backup'
-    owner node['nrpe']['user']
-    group node['nrpe']['group']
+    owner default_user
+    group default_group
     source 'nagios/plugins/check_rdiff'
   end
 
   sudo 'check_rdiff' do
-    user node['nrpe']['user']
+    user default_user
     nopasswd true
     commands [
       '/usr/lib64/nagios/plugins/check_rdiff',
