@@ -28,7 +28,7 @@ action :create do
   include_recipe 'rdiff-backup::server'
 
   if node['rdiff-backup']['server']['nrpe']
-    include_recipe 'nrpe'
+    nrpe 'rdiff_backup'
 
     nrpe_check "check_rdiff_job_#{new_resource.name}" do
       command '/usr/bin/sudo ' + ::File.join(

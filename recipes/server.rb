@@ -20,7 +20,7 @@
 include_recipe 'rdiff-backup'
 
 if node['rdiff-backup']['server']['nrpe']
-  include_recipe 'nrpe'
+  nrpe 'server'
 
   cookbook_file ::File.join(node['nrpe']['plugin_dir'], 'check_rdiff') do
     mode '0755'

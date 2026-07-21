@@ -45,7 +45,7 @@ describe 'rdiff-backup-test::create_server' do
       end
 
       it do
-        expect(chef_run).to include_recipe('nrpe')
+        expect(chef_run).to install_nrpe('rdiff_backup')
       end
 
       it do
