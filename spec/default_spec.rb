@@ -8,7 +8,7 @@ describe 'rdiff-backup::default' do
       end
 
       it do
-        expect(chef_run).to include_recipe('yum-epel')
+        expect(chef_run).to create_yum_epel('default')
       end
 
       it do
