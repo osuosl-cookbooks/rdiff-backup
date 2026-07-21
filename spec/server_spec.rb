@@ -100,6 +100,10 @@ describe 'rdiff-backup::server' do
         end
 
         it do
+          expect(chef_run).to_not install_nrpe('server')
+        end
+
+        it do
           expect(chef_run).to_not create_cookbook_file('/usr/lib64/nagios/plugins/chef_rdiff')
         end
         it do

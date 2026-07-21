@@ -30,7 +30,7 @@ describe 'rdiff-backup-test::nrpe_false_create_server' do
       end
 
       it do
-        expect(chef_run).to_not include_recipe('nrpe')
+        expect(chef_run).to_not install_nrpe('rdiff_backup')
       end
 
       it do
