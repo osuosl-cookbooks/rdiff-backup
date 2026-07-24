@@ -35,17 +35,13 @@ describe 'rdiff-backup-test::create_server' do
         )
       end
 
-      %w(
-        yum-epel
-        rdiff-backup::server
-      ).each do |r|
-        it do
-          expect(chef_run).to include_recipe(r)
-        end
+      it do
+        expect(chef_run).to include_recipe('rdiff-backup::server')
+        expect(chef_run).to create_yum_epel('default')
       end
 
       it do
-        expect(chef_run).to install_nrpe('rdiff_backup')
+        expect(chef_run).to install_nrpe('server')
       end
 
       it do
