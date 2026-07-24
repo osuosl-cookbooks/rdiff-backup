@@ -22,6 +22,8 @@ include_recipe 'rdiff-backup'
 if node['rdiff-backup']['server']['nrpe']
   nrpe 'server'
 
+  Chef::DSL::Universal.include(NrpeCookbook::Helpers)
+
   cookbook_file ::File.join(default_plugin_dir, 'check_rdiff') do
     mode '0755'
     cookbook 'rdiff-backup'
