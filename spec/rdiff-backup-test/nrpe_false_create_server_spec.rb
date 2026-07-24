@@ -20,22 +20,18 @@ describe 'rdiff-backup-test::nrpe_false_create_server' do
         expect(chef_run).to create_rdiff_backup('test1')
       end
 
-      %w(
-        yum-epel
-        rdiff-backup::server
-      ).each do |r|
-        it do
-          expect(chef_run).to include_recipe(r)
-        end
+      it do
+        expect(chef_run).to create_yum_epel('default')
+        expect(chef_run).to include_recipe('rdiff-backup::server')
       end
 
       it do
-        expect(chef_run).to_not install_nrpe('rdiff_backup')
+        expect(chef_run).to_not install_nrpe('server')
       end
 
       it do
         expect(chef_run).to_not create_cookbook_file(
-          chef_run.node['nrpe']['plugin_dir'] + '/check_rdiff'
+          '/usr/lib64/nagios/plugins/check_rdiff'
         )
       end
 
