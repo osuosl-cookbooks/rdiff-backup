@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-if node['rdiff-backup']['managed_epel']
-  yum_epel 'default'
-end
+yum_epel 'default' if node['rdiff-backup']['manage_epel']
 
 package 'rdiff-backup'

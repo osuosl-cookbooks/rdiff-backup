@@ -20,9 +20,7 @@
 include_recipe 'rdiff-backup'
 
 if node['rdiff-backup']['server']['nrpe']
-  if node['rdiff-backup']['server']['managed_nrpe']
-    nrpe 'server'
-  end
+  nrpe 'server' if node['rdiff-backup']['server']['manage_nrpe']
 
   Chef::DSL::Universal.include(NrpeCookbook::Helpers)
 

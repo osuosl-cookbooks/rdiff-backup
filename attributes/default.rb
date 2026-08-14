@@ -1,1 +1,1 @@
-default['rdiff-backup']['managed_epel'] = true
+default['rdiff-backup']['manage_epel'] = true
