@@ -14,5 +14,3 @@ default['rdiff-backup']['server']['nagios'] = {
 }
 default['rdiff-backup']['server']['nrpe'] = true
 default['rdiff-backup']['server']['manage_nrpe'] = true
-
-override['authorization']['sudo']['include_sudoers_d'] = true

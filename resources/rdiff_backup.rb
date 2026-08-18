@@ -28,8 +28,6 @@ action :create do
   include_recipe 'rdiff-backup::server'
 
   if node['rdiff-backup']['server']['nrpe']
-    nrpe 'rdiff_backup'
-
     nrpe_check "check_rdiff_job_#{new_resource.name}" do
       command '/usr/bin/sudo ' + ::File.join(
         default_plugin_dir, 'check_rdiff '
