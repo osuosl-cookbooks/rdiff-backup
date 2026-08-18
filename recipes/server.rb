@@ -22,7 +22,7 @@ include_recipe 'rdiff-backup'
 if node['rdiff-backup']['server']['nrpe']
   if node['rdiff-backup']['server']['manage_nrpe']
     nrpe 'server' do
-      install_epel false
+      install_epel node['rdiff-backup']['manage_epel']
     end
   end
 

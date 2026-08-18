@@ -19,7 +19,7 @@ describe 'rdiff-backup::server' do
       end
 
       it do
-        expect(chef_run).to install_nrpe('server').with(install_epel: false)
+        expect(chef_run).to install_nrpe('server').with(install_epel: true)
       end
 
       it do
@@ -124,6 +124,26 @@ describe 'rdiff-backup::server' do
 
         it do
           expect(chef_run).to_not install_nrpe('server')
+        end
+
+        it do
+          expect(chef_run).to create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff')
+        end
+
+        it do
+          expect(chef_run).to create_sudo('check_rdiff')
+        end
+      end
+
+      context 'manage_epel disabled' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['rdiff-backup']['manage_epel'] = false
+          end.converge(described_recipe)
+        end
+
+        it do
+          expect(chef_run).to install_nrpe('server').with(install_epel: false)
         end
 
         it do
