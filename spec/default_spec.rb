@@ -14,6 +14,22 @@ describe 'rdiff-backup::default' do
       it do
         expect(chef_run).to install_package('rdiff-backup')
       end
+
+      context 'manage_epel disabled' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['rdiff-backup']['manage_epel'] = false
+          end.converge(described_recipe)
+        end
+
+        it do
+          expect(chef_run).to_not create_yum_epel('default')
+        end
+
+        it do
+          expect(chef_run).to install_package('rdiff-backup')
+        end
+      end
     end
   end
 end
