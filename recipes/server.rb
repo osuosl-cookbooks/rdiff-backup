@@ -20,18 +20,24 @@
 include_recipe 'rdiff-backup'
 
 if node['rdiff-backup']['server']['nrpe']
-  include_recipe 'nrpe'
+  if node['rdiff-backup']['server']['manage_nrpe']
+    nrpe 'server' do
+      install_epel node['rdiff-backup']['manage_epel']
+    end
+  end
 
-  cookbook_file ::File.join(node['nrpe']['plugin_dir'], 'check_rdiff') do
+  Chef::DSL::Universal.include(NrpeCookbook::Helpers)
+
+  cookbook_file ::File.join(default_plugin_dir, 'check_rdiff') do
     mode '0755'
     cookbook 'rdiff-backup'
-    owner node['nrpe']['user']
-    group node['nrpe']['group']
+    owner default_user
+    group default_group
     source 'nagios/plugins/check_rdiff'
   end
 
   sudo 'check_rdiff' do
-    user node['nrpe']['user']
+    user default_user
     nopasswd true
     commands [
       '/usr/lib64/nagios/plugins/check_rdiff',

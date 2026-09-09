@@ -13,5 +13,4 @@ default['rdiff-backup']['server']['nagios'] = {
   'plugin-dir' => '/usr/lib64/nagios/plugins',
 }
 default['rdiff-backup']['server']['nrpe'] = true
-
-override['authorization']['sudo']['include_sudoers_d'] = true
+default['rdiff-backup']['server']['manage_nrpe'] = true
