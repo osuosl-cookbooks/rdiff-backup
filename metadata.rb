@@ -10,7 +10,7 @@ source_url       'https://github.com/osuosl-cookbooks/rdiff-backup'
 
 depends 'nrpe', '< 5.0'
 depends 'sudo'
-depends 'yum-epel'
+depends 'yum-epel', '>= 6.0.0'
 
 supports 'almalinux', '~> 8.0'
 supports 'almalinux', '~> 9.0'

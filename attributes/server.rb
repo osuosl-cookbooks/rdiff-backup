@@ -13,5 +13,7 @@ default['rdiff-backup']['server']['nagios'] = {
   'plugin-dir' => '/usr/lib64/nagios/plugins',
 }
 default['rdiff-backup']['server']['nrpe'] = true
+# Set to false where another cookbook already installs nrpe
+default['rdiff-backup']['server']['manage_nrpe'] = true
 
 override['authorization']['sudo']['include_sudoers_d'] = true

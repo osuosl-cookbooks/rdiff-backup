@@ -19,6 +19,10 @@ describe 'rdiff-backup::server' do
       end
 
       it do
+        expect(chef_run).to include_recipe('nrpe')
+      end
+
+      it do
         expect(chef_run).to create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff').with(
           mode: '0755',
           cookbook: 'rdiff-backup',
@@ -100,10 +104,28 @@ describe 'rdiff-backup::server' do
         end
 
         it do
-          expect(chef_run).to_not create_cookbook_file('/usr/lib64/nagios/plugins/chef_rdiff')
+          expect(chef_run).to_not create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff')
         end
         it do
           expect(chef_run).to_not create_sudo('check_rdiff')
+        end
+      end
+
+      context 'manage_nrpe disabled' do
+        cached(:chef_run) do
+          ChefSpec::SoloRunner.new(pltfrm) do |node|
+            node.normal['rdiff-backup']['server']['manage_nrpe'] = false
+          end.converge(described_recipe)
+        end
+
+        it do
+          expect(chef_run).to_not include_recipe('nrpe')
+        end
+        it do
+          expect(chef_run).to create_cookbook_file('/usr/lib64/nagios/plugins/check_rdiff')
+        end
+        it do
+          expect(chef_run).to create_sudo('check_rdiff')
         end
       end
     end
