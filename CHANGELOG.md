@@ -2,6 +2,10 @@
 
 This file is used to list changes made in each version of rdiff-backup.
 
+5.5.0 (2026-10-20)
+------------------
+- Replace the yum-epel recipe with the yum_epel resource
+
 5.4.3 (2026-07-13)
 ------------------
 - cinc: updated kitchen and dokken files
