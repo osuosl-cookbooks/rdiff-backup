@@ -70,8 +70,14 @@ late, run too long, grow too quickly, or become corrupted.
 Attributes
 ----------
 
+## General Attributes:
+
+* `node['rdiff-backup']['manage_epel']` - Whether this cookbook configures the EPEL repository with `yum_epel`, default "true". Set to false where another cookbook already manages EPEL
+* `node['nrpe']['install_yum-epel']` - Set to "false" so the nrpe cookbook never includes the `yum-epel` recipe, which yum-epel 6 no longer ships
+
 ## Server Attributes:
 
+* `node['rdiff-backup']['server']['manage_nrpe']` - Whether the server recipe and `rdiff_backup` resource include the `nrpe` recipe, default "true". Set to false where another cookbook already installs nrpe
 * `node['rdiff-backup']['server']['start-hour']` - Earliest hour of the day to schedule jobs, default "13"
 * `node['rdiff-backup']['server']['end-hour']` - Latest hour of the day to schedule jobs, default "23"
 * `node['rdiff-backup']['server']['restrict-to-own-environment']` - Whether to back up all rdiff-backup clients or only the ones in the same environment as the server, default "true"
